@@ -9,5 +9,10 @@ __pycache__/
 # Ignore Mac system files
 .DS_Store
 
+# libraries (virtual environment)
 venv/
 .venv/
+
+
+# secret local variables
+.env
