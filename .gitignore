@@ -16,3 +16,6 @@ venv/
 
 # secret local variables
 .env
+
+# testing stuff
+/test_pile
