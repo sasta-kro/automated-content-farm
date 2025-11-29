@@ -2,6 +2,7 @@ from google import genai
 from dotenv import load_dotenv
 import os
 
+
 # getting the api key
 load_dotenv() # Loads variables from .env
 
@@ -13,10 +14,11 @@ if not api_key:
 # starting the program
 client = genai.Client(api_key=api_key)
 
-prompt = "Generate a 1-sentence history fact about Ancient Rome in the tone of Patrick from Spongebob."
+prompt = "Generate a 1-sentence fun fact about biology in the tone of Patrick from Spongebob."
 
-# response = client.models.generate_content(
-#     model="gemini-1.5-flash",
-#     contents=prompt
-# )
-# print(response.text)
+response = client.models.generate_content(
+    model="gemini-2.5-flash",
+    contents=prompt
+)
+
+print(response.text)
