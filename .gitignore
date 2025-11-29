@@ -1,0 +1,13 @@
+# Ignore PyCharm/IntelliJ settings
+.idea/
+*.iml
+
+# Ignore Python compiled files
+__pycache__/
+*.pyc
+
+# Ignore Mac system files
+.DS_Store
+
+venv/
+.venv/
