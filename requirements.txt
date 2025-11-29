@@ -5,3 +5,4 @@ openai-whisper
 pydub
 python-dotenv
 mlx-whisper
+requests
