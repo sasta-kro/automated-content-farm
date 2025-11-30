@@ -34,8 +34,7 @@ import moviepy.video.fx.all as vfx
 # to use the downloaded binary stock video (wrapper)
 from moviepy.video.io.VideoFileClip import VideoFileClip
 
-# for tiktok style captions with whisper
-import mlx_whisper
+
 
 
 # ==========================================
