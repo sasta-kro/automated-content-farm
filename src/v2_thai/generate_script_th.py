@@ -23,7 +23,8 @@ class ThaiScriptOutput(BaseModel):
 
 async def generate_thai_script_data(
         topic: str = "spicy cheating story that got karma",
-        time_length: str = "30-45"
+        time_length: str = "30-45",
+        output_folder_path: str = ""
 ):
     """
     Generates a viral-style Thai short-form script using Gemini.
@@ -93,7 +94,20 @@ async def generate_thai_script_data(
 
         print(f"Title: {data.get('title_thai')}")
         print(f"Gender: {data.get('gender')}")
-        print(f"Full Script: {data.get('script_thai')}...")
+        print(f"Full Script ('script_thai'): {data.get('script_thai')}...")
+
+        # Save to a JSON file for inspection
+        temp_workspace_dir = os.path.dirname(output_folder_path) # get the temp workspace dir
+        output_json_file_name = "original_script_data_th.json"
+        if result:
+            with open(
+                    os.path.join(temp_workspace_dir, output_json_file_name),
+                    "w", encoding="utf-8"
+            ) as f:
+                json.dump(result, f, ensure_ascii=False, indent=4)
+            print(f"  >>> Saved full transcript to '{output_json_file_name}' ")
+        else:
+            raise "Couldn't save JSON for transcription."
 
         return data
 

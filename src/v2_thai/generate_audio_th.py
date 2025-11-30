@@ -152,6 +152,7 @@ async def process_audio_with_ffmpeg(input_path: str, speed: float = 1.2) -> str:
         #    overwrite_output=True adds the '-y' flag
         #    quiet=True suppresses the huge wall of text logs
         ffmpeg.run(stream, overwrite_output=True, quiet=True)
+        return output_path
 
     except ffmpeg.Error as e:
         print(f"   ❌ FFmpeg Error: {e.stderr.decode('utf8') if e.stderr else str(e)}")
@@ -221,7 +222,7 @@ async def generate_audio_narration_file_th(
         # Apply 20% speed boost (1.2x)
         sped_up_audio_file = await process_audio_with_ffmpeg(raw_audio_output_file, speed=1.25)
 
-        print(f"   ✅ Sped-up Audio saved to: {sped_up_audio_file}")
+        print(f"   ✅ Sped-up Audio saved to: {sped_up_audio_file}\n")
         return sped_up_audio_file
 
     print("   ❌ Audio generation completely failed.")

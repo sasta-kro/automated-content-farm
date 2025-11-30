@@ -47,6 +47,19 @@ async def generate_timed_transcript_th(audio_file_path: str):
         print(f"   ✅ Transcription Complete! Found {len(words_and_time_data)} words.")
         print(f"   Sample: {words_and_time_data[:4]}\n")
 
+        # Save to a JSON file for inspection
+        temp_workspace_dir = os.path.dirname(audio_file_path) # get the temp workspace dir
+        output_json_file_name = "whisper_transcription.json"
+        if result:
+            with open(
+                    os.path.join(temp_workspace_dir, output_json_file_name),
+                    "w", encoding="utf-8"
+            ) as f:
+                json.dump(result, f, ensure_ascii=False, indent=4)
+            print(f"  >>> Saved full transcript to '{output_json_file_name}' ")
+        else:
+            raise "Couldn't save JSON for transcription."
+
         return words_and_time_data
 
     except Exception as e:
@@ -59,8 +72,14 @@ if __name__ == "__main__":
     # Test execution
     TEST_AUDIO = "___temp_script_workspace/spedup_audio_narration.mp3"
 
-    if os.path.exists(TEST_AUDIO):
-        word_data = asyncio.run(generate_timed_transcript_th(TEST_AUDIO))
-
-    else:
+    if not os.path.exists(TEST_AUDIO):
         print("audio file not found")
+
+    word_data = asyncio.run(generate_timed_transcript_th(TEST_AUDIO))
+
+    for item in word_data:
+        print(item)
+
+
+
+
