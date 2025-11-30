@@ -3,10 +3,10 @@ import json
 import os
 import asyncio
 
-async def generate_timed_transcript_th(audio_file_path: str):
+async def generate_whisper_timed_transcript_th(audio_file_path: str):
     """
     Transcribes audio using Apple Silicon optimized Whisper (MLX)
-    to get precise word-level timestamps for TikTok dynamic captions.
+    to get precise char-level timestamps for TikTok dynamic captions. (whisper isn't smart enough to do word level in Thai)
     """
     print(f"3. 📝 Transcribing Audio for Subtitles: {audio_file_path}")
 
@@ -17,7 +17,7 @@ async def generate_timed_transcript_th(audio_file_path: str):
     try:
         # Transcribe using MLX
         # `word_timestamps=True`    enables it to make dynamic subtitles with accurate timing
-        result = mlx_whisper.transcribe(
+        whisper_transcription_data = mlx_whisper.transcribe(
             audio_file_path,
 
             # used Turbo model since the largest whisper turbo model only uses ~4-5gb
@@ -31,7 +31,7 @@ async def generate_timed_transcript_th(audio_file_path: str):
         # Whisper returns: {'segments': [{'words': [...]}, ...]}
 
         words_and_time_data = []
-        for segment in result.get('segments', []):
+        for segment in whisper_transcription_data.get('segments', []):
             for word_obj in segment.get('words', []):
 
                 # Clean up the word (Whisper often adds spaces)
@@ -49,21 +49,22 @@ async def generate_timed_transcript_th(audio_file_path: str):
 
         # Save to a JSON file for inspection
         temp_workspace_dir = os.path.dirname(audio_file_path) # get the temp workspace dir
-        output_json_file_name = "whisper_transcription.json"
-        if result:
+        output_json_file_name = "raw_whisper_transcription.json"
+        if whisper_transcription_data:
             with open(
                     os.path.join(temp_workspace_dir, output_json_file_name),
                     "w", encoding="utf-8"
             ) as f:
-                json.dump(result, f, ensure_ascii=False, indent=4)
+                json.dump(whisper_transcription_data, f, ensure_ascii=False, indent=4)
             print(f"  >>> Saved full transcript to '{output_json_file_name}' ")
         else:
-            raise "Couldn't save JSON for transcription."
+            raise f"Couldn't save JSON for transcription. name: {output_json_file_name}"
 
         return words_and_time_data
 
     except Exception as e:
         print(f"   ❌ Transcription Failed: {e}")
+        raise e
         return None
 
 
@@ -75,11 +76,9 @@ if __name__ == "__main__":
     if not os.path.exists(TEST_AUDIO):
         print("audio file not found")
 
-    word_data = asyncio.run(generate_timed_transcript_th(TEST_AUDIO))
-
-    for item in word_data:
-        print(item)
-
+    word_data = asyncio.run(generate_whisper_timed_transcript_th(TEST_AUDIO))
+    print("-----------")
+    print(word_data)
 
 
 

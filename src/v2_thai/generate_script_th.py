@@ -97,17 +97,16 @@ async def generate_thai_script_data(
         print(f"Full Script ('script_thai'): {data.get('script_thai')}...")
 
         # Save to a JSON file for inspection
-        temp_workspace_dir = os.path.dirname(output_folder_path) # get the temp workspace dir
         output_json_file_name = "original_script_data_th.json"
-        if result:
+        if data:
             with open(
-                    os.path.join(temp_workspace_dir, output_json_file_name),
+                    os.path.join(output_folder_path, output_json_file_name),
                     "w", encoding="utf-8"
             ) as f:
-                json.dump(result, f, ensure_ascii=False, indent=4)
+                json.dump(data, f, ensure_ascii=False, indent=4)
             print(f"  >>> Saved full transcript to '{output_json_file_name}' ")
         else:
-            raise "Couldn't save JSON for transcription."
+            raise f"Couldn't save JSON for transcription. name: {output_json_file_name}"
 
         return data
 
@@ -158,7 +157,7 @@ async def translate_thai_content_to_eng(thai_content):
 )
     raw_text = response.text.strip()
     print(raw_text)
-    print("---------\n")
+    print("-----Translation finished----\n")
     return raw_text
 
 
@@ -179,9 +178,3 @@ if __name__ == "__main__":
         asyncio.run(
             translate_thai_content_to_eng(result)
         )
-
-    if result:
-        # Save to a file to verify output
-        with open("temp_script_workspace/current_script.json", "w", encoding="utf-8") as f:
-            json.dump(result, f, ensure_ascii=False, indent=4)
-        print("\nSaved full result to 'current_script.json'")
