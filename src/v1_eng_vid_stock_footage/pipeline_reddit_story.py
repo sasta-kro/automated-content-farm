@@ -16,8 +16,13 @@ import requests # for Pexels API
 import random # to choose random footage from Pexels
 
 from dotenv import load_dotenv # to load env variables
-from google import genai
+
+from google import genai # import gemini
+from google.genai import types  # thinking mode
+
+# text to speech
 import edge_tts
+
 from moviepy.editor import ColorClip, TextClip, CompositeVideoClip, AudioFileClip # ImageMagick is installed
 
 # to use FFMPEG directly to merge streams without re-encoding the video. It is instant and lossless.
@@ -80,18 +85,30 @@ async def generate_script_and_keywords(api_key):
 
     # Updated Prompt: Longer script + Search Term extraction
     prompt = (
-        "You are a scriptwriter for vertical short-form videos. "
-        "Write a multi-sentence, 15-second engaging fact about Biology or Animals. "
-        "The tone should be enthusiastic and mind-blowing. "
-        "AFTER the script, add a separator '|||' followed by a SINGLE 1-2 word search term "
-        "that describes the visual background for this script (e.g., 'Ostrich Egg' if the script is about that)."
+        """
+        Generate a reddit story that is interesting and engaging (e.g. weird cheating story, dark first then wholesome plot twist).
+        This is for a script for a short form vertical video like a Instagram reel or a TikTok or a YT shorts.
+        The video should last around 40 seconds so generate the script accordingly.
+        The tone should be from the pov of the reddit post owner, concerned or suspicious or anything that fits the story and 
+        isn't dry. Make it have a personality.
+        
+        AFTER the script, add a separator '|||' followed by a visual search query for a stock video site for generic visual engagement.
+        search query keywords for clips such as oddly satisfying things such as Hydraulic pressing, soap cutting, sand slicing, satisfying gameplay. 
         "\n\nFormat: [Script] ||| [Search Term] \n"
-        "(e.g. `This is the example script ... about cute cats ||| cute cats`)"
+        "(e.g. `This is the example script ... about a cheating payback story ||| asmr video`)"
+                """
     )
 
     response = client.models.generate_content(
         model="gemini-2.5-pro",
-        contents=prompt
+        contents=prompt,
+        config=types.GenerateContentConfig(
+            # This enables the thinking capability
+            thinking_config=types.ThinkingConfig(
+                # include_thoughts=True, # Returns the 'thoughts' in the response
+                thinking_budget=1024   # Token budget for thinking (1024 is a good start)
+            )
+        )
     )
 
     raw_text = response.text.strip()
@@ -259,9 +276,9 @@ def generate_composed_video(word_data):
         # Note: 'stroke_color' and 'stroke_width' make it pop like subtitles
         txt_clip = TextClip(
             word_text,
-            fontsize=130, # Bigger font for single words
+            fontsize=140, # Bigger font for single words
             color='white',
-            font='Comic-sans',
+            font='Proxima Nova',
             stroke_color='black',
             stroke_width=3.5,
             method='label'   # 'label' is better for single words than 'caption'
@@ -351,3 +368,5 @@ async def main():
 
 if __name__ == "__main__":
     asyncio.run(main())
+    # TODO: replace tts with Gemini tts (more realistic)
+    # TODO: get satisfying gameplay stock footage vids. > choose random vid > choose random segment from vid > use as bg
