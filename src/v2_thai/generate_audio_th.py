@@ -1,15 +1,22 @@
 import asyncio
 import os
+
 from dotenv import load_dotenv
 import edge_tts
 from google import genai
 from google.genai import types
 
+
+import wave # to write/save gemini's audio file as .wav since it returns that
+import ffmpeg # to speed up the audio clip
+
+# ==================== Config
+
 # Load API Key
 load_dotenv()
 GEMINI_API_KEY = os.getenv("GEMINI_API_KEY")
 
-# --- CONFIGURATION ---
+# file dir
 AUDIO_DIR = "temp_script_workspace"
 os.makedirs(AUDIO_DIR, exist_ok=True)
 
@@ -27,6 +34,9 @@ GEMINI_VOICES = {
     "F": "Aoede"   # Breezy, Confident (closest to Vega)
 }
 
+
+# ========================== Edge
+
 async def generate_with_edge_tts(text: str, gender: str, filename: str) -> str:
     """
     Generates audio using MS Edge TTS (Best for Thai).
@@ -35,13 +45,17 @@ async def generate_with_edge_tts(text: str, gender: str, filename: str) -> str:
     output_path = os.path.join(AUDIO_DIR, filename)
 
     # Adjusting rate for "TikTok Speed" (Thai speakers talk fast online)
-    communicate = edge_tts.Communicate(text, voice, rate="+20%")
+    communicate = edge_tts.Communicate(text, voice)
 
     print(f" 🎙️ Audio Synthesizing (edge-tts) with {voice}...")
     await communicate.save(output_path)
     return output_path
 
-async def generate_with_gemini(text: str, gender: str, filename: str) -> str:
+
+
+# ===================== Gemini
+
+async def generate_with_gemini(text: str, gender: str, filename: str):
     """
     Generates audio using Gemini 2.5 Flash Audio Generation.
     WARNING: Thai support is experimental.
@@ -51,9 +65,12 @@ async def generate_with_gemini(text: str, gender: str, filename: str) -> str:
 
     client = genai.Client(api_key=GEMINI_API_KEY)
     voice_name = GEMINI_VOICES.get(gender, "Aoede")
+
+
+    filename = filename.replace(".mp3", ".wav")
     output_path = os.path.join(AUDIO_DIR, filename)
 
-    print(f" 🎙️ Audio Synthesizing (Gemini API) with {voice_name}...")
+    print(f" 🎙️ Audio Synthesizing (Gemini API) with voice: {voice_name}...")
 
     # Configuration for Speech Generation
     # Note: This uses the generate_content with audio modality
@@ -61,10 +78,10 @@ async def generate_with_gemini(text: str, gender: str, filename: str) -> str:
 
     try:
         response = client.models.generate_content(
-            model="gemini-2.5-pro",
+            model="gemini-2.5-flash-preview-tts",
             contents=prompt,
             config=types.GenerateContentConfig(
-                response_modalities=["AUDIO"],
+                response_modalities=["AUDIO"], # important: make it reply in audio
                 speech_config=types.SpeechConfig(
                     voice_config=types.VoiceConfig(
                         prebuilt_voice_config=types.PrebuiltVoiceConfig(
@@ -75,30 +92,77 @@ async def generate_with_gemini(text: str, gender: str, filename: str) -> str:
             )
         )
 
+        print("         response received")
+
         # Gemini returns raw audio bytes (PCM or MP3 depending on config)
         # We need to save it.
         # Note: The SDK return format for audio needs handling.
         # Often it's in response.candidates[0].content.parts[0].inline_data.data
 
-        # Checking if we got audio back
         if response.candidates and response.candidates[0].content.parts:
             part = response.candidates[0].content.parts[0]
-            if part.inline_data:
-                import base64
-                # Decode base64 audio data
-                audio_data = base64.b64decode(part.inline_data.data)
 
-                with open(output_path, "wb") as f:
-                    f.write(audio_data)
+            if part.inline_data and part.inline_data.data:
+                # 2. Get the raw PCM bytes (Linear16)
+                audio_data = part.inline_data.data
+
+                # optional
+                print(f"   Received {len(audio_data)} bytes of raw PCM audio.")
+
+                # 3. Write to WAV file with correct 24kHz header
+                with wave.open(output_path, "wb") as wf:
+                    wf.setnchannels(1)      # Mono
+                    wf.setsampwidth(2)      # 16-bit (2 bytes per sample)
+                    wf.setframerate(24000)  # 24kHz (Standard for Gemini Flash)
+                    wf.writeframes(audio_data)
+
                 return output_path
             else:
-                print("   ❌ Gemini response contained no audio data.")
-                return None
-        return None
+                print("   ❌ Gemini response contained no inline audio data.")
 
     except Exception as e:
         print(f"   ❌ Gemini TTS Failed: {e}")
-        return None
+
+
+# ====================== Helper for the main wrapper function, to speed up the audio
+
+async def process_audio_with_ffmpeg(input_path: str, speed: float = 1.2) -> str:
+    """
+    Speeds up audio using ffmpeg-python without pitch shifting (No Chipmunk Effect).
+    """
+    # Construct output filename
+    tts_model = "Unknown"
+    if "Gem" in input_path:   tts_model = "Gem"
+    elif "Edg" in input_path: tts_model = "Edg"
+
+    output_path = f"spedup_audio_narration_{tts_model}.mp3"
+
+    print(f"   ⏩ Speeding up audio by {int((speed-1)*100)}% (HQ MP3)...")
+
+    try:
+        # Build the FFmpeg stream graph
+        #    - input: load the file
+        #    - filter('atempo', speed): Speed up TEMPO only (maintains pitch)
+        #    - output: save as mp3 with 320k bitrate (High Quality)
+        stream = ffmpeg.input(input_path)
+        stream = ffmpeg.filter(stream, 'atempo', speed)
+        stream = ffmpeg.output(stream, output_path, **{'b:a': '320k'})
+
+        # Run it
+        #    overwrite_output=True adds the '-y' flag
+        #    quiet=True suppresses the huge wall of text logs
+        ffmpeg.run(stream, overwrite_output=True, quiet=True)
+
+    except ffmpeg.Error as e:
+        print(f"   ❌ FFmpeg Error: {e.stderr.decode('utf8') if e.stderr else str(e)}")
+        return input_path
+    except Exception as e:
+        print(f"   ❌ General Error: {e}")
+        return input_path
+
+
+
+# ========================== main wrapper function
 
 async def generate_audio_narration_th(script_data: dict, use_gemini: bool = False):
     """
@@ -114,24 +178,51 @@ async def generate_audio_narration_th(script_data: dict, use_gemini: bool = Fals
 
     # Sanitize filename from title
     cleaned_title = "".join([c for c in script_data.get("title_thai", "audio") if c.isalnum() or c in (' ', '_')]).rstrip()
-    filename = f"{cleaned_title[:20].strip().replace(' ', '_')}_{gender}.mp3"
 
-    output_file = None
+    filename_supported_thai_title = cleaned_title[:20].strip().replace(' ', '_') # optional, in case I want to have thai filename
+    # no extension yet. Extension will be added later since edge gives mp3 and gemini give wav
+    filename = f"raw_original_audio_{gender}"
+
+    raw_audio_output_file = None
 
     # Try Gemini if bool arg is true
     if use_gemini:
-        output_file = await generate_with_gemini(text, gender, filename)
+        raw_audio_output_file = await generate_with_gemini(
+            text=text,
+            gender=gender,
+            filename= f"{filename}_Gem.wav"
+        )
 
     # Fallback or Default to EdgeTTS
-    if not output_file:
+    if not raw_audio_output_file:
+
         if use_gemini: # only print when gemini bool is set to true
             print("   ⚠️ Falling back to EdgeTTS...")
-        output_file = await generate_with_edge_tts(text, gender, filename)
 
-    if output_file:
-        print(f"   ✅ Audio saved to: {output_file}")
+        raw_audio_output_file = await generate_with_edge_tts(
+            text=text,
+            gender=gender,
+            filename= f"{filename}_Edg.mp3"
+        )
 
-    return output_file
+    if raw_audio_output_file:
+        print(f"   Raw Audio saved to: {raw_audio_output_file}")
+
+
+    # Post-Processing (Speed up + High Quality Convert)
+    if raw_audio_output_file and os.path.exists(raw_audio_output_file):
+        # Apply 20% speed boost (1.2x)
+        sped_up_audio_file = await process_audio_with_ffmpeg(raw_audio_output_file, speed=1.25)
+
+        print(f"   ✅ Sped-up Audio saved to: {sped_up_audio_file}")
+        return sped_up_audio_file
+
+    print("   ❌ Audio generation completely failed.")
+    return None
+
+
+
+# ================ Execution
 
 if __name__ == "__main__":
     # Test Data simulating script_generator output
