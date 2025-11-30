@@ -10,15 +10,12 @@ from google.genai import types
 import wave # to write/save gemini's audio file as .wav since it returns that
 import ffmpeg # to speed up the audio clip
 
+
 # ==================== Config
 
 # Load API Key
 load_dotenv()
 GEMINI_API_KEY = os.getenv("GEMINI_API_KEY")
-
-# file dir
-AUDIO_DIR = "temp_script_workspace"
-os.makedirs(AUDIO_DIR, exist_ok=True)
 
 # Voice Mapping
 # 1. Edge TTS (Reliable Thai Voices)
@@ -42,14 +39,14 @@ async def generate_with_edge_tts(text: str, gender: str, filename: str) -> str:
     Generates audio using MS Edge TTS (Best for Thai).
     """
     voice = EDGE_VOICES.get(gender, "th-TH-PremwadeeNeural")
-    output_path = os.path.join(AUDIO_DIR, filename)
+    output_file_path = filename
 
     # Adjusting rate for "TikTok Speed" (Thai speakers talk fast online)
     communicate = edge_tts.Communicate(text, voice)
 
     print(f" 🎙️ Audio Synthesizing (edge-tts) with {voice}...")
-    await communicate.save(output_path)
-    return output_path
+    await communicate.save(output_file_path)
+    return output_file_path
 
 
 
@@ -68,7 +65,7 @@ async def generate_with_gemini(text: str, gender: str, filename: str):
 
 
     filename = filename.replace(".mp3", ".wav")
-    output_path = os.path.join(AUDIO_DIR, filename)
+    output_file_path = filename
 
     print(f" 🎙️ Audio Synthesizing (Gemini API) with voice: {voice_name}...")
 
@@ -110,13 +107,13 @@ async def generate_with_gemini(text: str, gender: str, filename: str):
                 print(f"   Received {len(audio_data)} bytes of raw PCM audio.")
 
                 # 3. Write to WAV file with correct 24kHz header
-                with wave.open(output_path, "wb") as wf:
+                with wave.open(output_file_path, "wb") as wf:
                     wf.setnchannels(1)      # Mono
                     wf.setsampwidth(2)      # 16-bit (2 bytes per sample)
                     wf.setframerate(24000)  # 24kHz (Standard for Gemini Flash)
                     wf.writeframes(audio_data)
 
-                return output_path
+                return output_file_path
             else:
                 print("   ❌ Gemini response contained no inline audio data.")
 
@@ -130,12 +127,15 @@ async def process_audio_with_ffmpeg(input_path: str, speed: float = 1.2) -> str:
     """
     Speeds up audio using ffmpeg-python without pitch shifting (No Chipmunk Effect).
     """
-    # Construct output filename
+    # Determine TTS Model based on input string (not used anymore to make it easier to use the file name)
     tts_model = "Unknown"
     if "Gem" in input_path:   tts_model = "Gem"
     elif "Edg" in input_path: tts_model = "Edg"
 
-    output_path = f"spedup_audio_narration_{tts_model}.mp3"
+    # rename output file
+    input_dir = os.path.dirname(input_path)
+    new_filename = f"spedup_audio_narration.mp3"
+    output_path = os.path.join(input_dir, new_filename)
 
     print(f"   ⏩ Speeding up audio by {int((speed-1)*100)}% (HQ MP3)...")
 
@@ -164,11 +164,16 @@ async def process_audio_with_ffmpeg(input_path: str, speed: float = 1.2) -> str:
 
 # ========================== main wrapper function
 
-async def generate_audio_narration_th(script_data: dict, use_gemini: bool = False):
+async def generate_audio_narration_file_th(
+        script_data: dict,
+        output_folder_path: str = "",
+        use_gemini: bool = False
+):
     """
     Main entry point for audio generation.
     Args:
         script_data (dict): From script_generator.py (must contain 'script_thai' and 'gender')
+        output_folder_path: where the output audio file will be stored in
         use_gemini (bool): If True, tries Gemini first. Defaults to False for safety.
     """
     print("2. 🔊 Starting Audio Generation...")
@@ -180,8 +185,10 @@ async def generate_audio_narration_th(script_data: dict, use_gemini: bool = Fals
     cleaned_title = "".join([c for c in script_data.get("title_thai", "audio") if c.isalnum() or c in (' ', '_')]).rstrip()
 
     filename_supported_thai_title = cleaned_title[:20].strip().replace(' ', '_') # optional, in case I want to have thai filename
+
+    # joined with the output folder
     # no extension yet. Extension will be added later since edge gives mp3 and gemini give wav
-    filename = f"raw_original_audio_{gender}"
+    filename = os.path.join(output_folder_path, f"raw_original_audio_{gender}")
 
     raw_audio_output_file = None
 
@@ -233,6 +240,6 @@ if __name__ == "__main__":
     }
 
     # Run the test
-    asyncio.run(generate_audio_narration_th(
+    asyncio.run(generate_audio_narration_file_th(
         test_data, use_gemini=True)
     )

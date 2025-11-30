@@ -21,7 +21,7 @@ class ThaiScriptOutput(BaseModel):
     script_thai: str = Field(description="The viral short story script in Thai, slang allowed")
     gender: str = Field(description="The gender of the narrator: 'M' or 'F'")
 
-async def generate_thai_script(
+async def generate_thai_script_data(
         topic: str = "spicy cheating story that got karma",
         time_length: str = "30-45"
 ):
@@ -59,7 +59,8 @@ async def generate_thai_script(
     Generate a script for a short video about: "{topic}".
     If the topic is "random", invent a viral-worthy story (e.g., cheating, office drama, lottery, ghost, revenge).
     
-    Determine the most appropriate gender for the narrator based on the story (e.g., cheating boyfriend story -> Female narrator).
+    Determine the most appropriate gender for the narrator based on the story 
+    (e.g., cheating boyfriend story -> Female narrator 'F', going to brothel and ended up with ladyboy -> Male narrator 'M').
     
     OUTPUT FORMAT:
     Return strictly raw JSON. Do not use Markdown code blocks.
@@ -143,7 +144,7 @@ async def translate_thai_content_to_eng(thai_content):
 )
     raw_text = response.text.strip()
     print(raw_text)
-    print("---------")
+    print("---------\n")
     return raw_text
 
 
@@ -153,8 +154,8 @@ if __name__ == "__main__":
     # Example topics: "catfish date", "office horror story", "winning lottery", "mother-in-law horror"
     # Use "random viral story" to let Gemini be creative
     result = asyncio.run(
-        generate_thai_script(
-            topic="caught boyfriend cheating with my mother",
+        generate_thai_script_data(
+            topic=  "guy discovers my sister working in a brothel", #"caught boyfriend cheating with my mother",
             time_length="30-45"
             )
     )
@@ -167,6 +168,6 @@ if __name__ == "__main__":
 
     if result:
         # Save to a file to verify output
-        with open("current_script.json", "w", encoding="utf-8") as f:
+        with open("temp_script_workspace/current_script.json", "w", encoding="utf-8") as f:
             json.dump(result, f, ensure_ascii=False, indent=4)
         print("\nSaved full result to 'current_script.json'")
