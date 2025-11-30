@@ -23,7 +23,8 @@ class ThaiScriptOutput(BaseModel):
 
 async def generate_thai_script(
         topic: str = "spicy cheating story that got karma",
-        time_length: str = "30-45"):
+        time_length: str = "30-45"
+):
     """
     Generates a viral-style Thai short-form script using Gemini.
     Returns: JSON with title_thai, script_thai, and gender.
@@ -73,13 +74,14 @@ async def generate_thai_script(
         # Using the new google-genai SDK with structured output
         response = client.models.generate_content(
             model="gemini-2.5-pro",
+            contents=prompt,
+
             config=types.GenerateContentConfig(
                 system_instruction=system_instruction,
                 response_mime_type="application/json", # Forces JSON output
                 response_schema=ThaiScriptOutput, # Enforces the Pydantic schema
-                temperature=1.2, # High temperature = more creative/drama
+                temperature=1.25, # High temperature = more creative/drama
             ),
-            contents=prompt
         )
         # The SDK might return a parsed object or text depending on the version.
         # We handle the text parsing to be safe with the 'response_mime_type' enforcement
@@ -99,6 +101,53 @@ async def generate_thai_script(
         # Return a dummy fallback for testing if API fails
         return None
 
+
+# for translation
+async def translate_thai_content_to_eng(thai_content):
+    """
+    Translates Thai social media content to English with full cultural nuance.
+
+    Args:
+        thai_content (dict): A dictionary containing 'title_thai', 'script_thai', and 'gender'.
+    """
+    print(" 🇬🇧 Translating the Thai content to English...")
+    client = genai.Client(api_key=gemini_api_key)
+
+
+    prompt = f"""
+    You are an expert Localization Specialist and Translator who specializes in Thai Social Media Culture and English Gen Z/Internet Slang.
+
+    YOUR TASK:
+    Translate the following Thai content into English.
+    
+    INPUT DATA:
+    {thai_content}
+    
+    CRITICAL INSTRUCTIONS:
+    1. The translation must match the energy of the source. If the Thai text is gossipy ("Mao Moi"), dramatic, or uses slang (e.g., "Gae", "Pirood", "Peak"), the English must use equivalent Internet slang) 
+    2. Pay attention to the 'gender' field. If 'F', use feminine/bestie slang if appropriate. If 'M', adjust accordingly.
+    3. No Censorship of Vibe: Keep exclamation marks, caps, and the chaotic energy of the original post.
+    4. Do not output conversational filler.
+    """
+
+    response = client.models.generate_content(
+    model="gemini-2.5-pro",
+    contents=prompt,
+    config=types.GenerateContentConfig(
+        # This enables the thinking capability
+        thinking_config=types.ThinkingConfig(
+            # include_thoughts=True, # Returns the 'thoughts' in the response
+            thinking_budget=3000   # Token budget for thinking (1024 is a good start)
+        )
+    )
+)
+    raw_text = response.text.strip()
+    print(raw_text)
+    print("---------")
+    return raw_text
+
+
+
 if __name__ == "__main__":
     # Test the function
     # Example topics: "catfish date", "office horror story", "winning lottery", "mother-in-law horror"
@@ -109,6 +158,12 @@ if __name__ == "__main__":
             time_length="30-45"
             )
     )
+
+    # translate to English so that I can understand
+    if result is not None:
+        asyncio.run(
+            translate_thai_content_to_eng(result)
+        )
 
     if result:
         # Save to a file to verify output
