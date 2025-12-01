@@ -1,90 +1,65 @@
-import os
-import subprocess
 import json
+import os
 import shutil
-import textgrid
-from pythainlp.tokenize import word_tokenize
-from pythainlp.util import normalize, dict_trie
+import subprocess
+import textgrid  # Assuming import
+from pythainlp import word_tokenize  # Assuming import
+from pythainlp.util import normalize, dict_trie # Assuming import
 
 from src.v2_thai.Util_functions import save_json_file
 
 
-def post_process_alignment(mfa_json_data, original_tokenized_list):
+
+# ==========================================
+#        SUB-FUNCTIONS (modules of the mfa mini pipeline)
+# ==========================================
+
+def _setup_mfa_directories(output_dir):
     """
-    Replaces <unk> or mis-spelled words in MFA output with the
-    correct word from the original PyThaiNLP tokenization.
-    """
+    Creates necessary folders and cleans up previous input data.
+    Make a folder to put in the prepared data for mfa, and a folder to put in the output files.
 
-    # Check for length mismatch (Crucial Warning)
-    if len(mfa_json_data) != len(original_tokenized_list):
-        print(f"⚠️ Warning: Token mismatch! Original: {len(original_tokenized_list)} vs MFA: {len(mfa_json_data)}")
-        # If lengths don't match, MFA might have skipped a word or merged two.
-        # We proceed cautiously, stopping at the shorter length.
-        limit = min(len(mfa_json_data), len(original_tokenized_list))
-    else:
-        limit = len(mfa_json_data)
-
-    fixed_data = []
-
-    for i in range(limit):
-        mfa_item = mfa_json_data[i]
-        original_word = original_tokenized_list[i]
-
-        # Use the timestamp from MFA
-        final_item = {
-            "start": mfa_item['start'],
-            "end": mfa_item['end'],
-            # ALWAYS use the original word for the subtitle text,
-            # ignoring what MFA thinks the text is (which might be <unk>)
-            "word": original_word
-        }
-        fixed_data.append(final_item)
-
-    return fixed_data
-
-
-def run_mfa_pipeline(raw_script_text_from_json, audio_file_path, output_dir, mfa_cmd="mfa"):
-    """
-    1. Prepares data (tokenizes Thai) for MFA from the inputs.
-    2. Calls MFA via subprocess (External Tool).
-    3. Parses TextGrid back to JSON.
-    """
-
-    # === A. DATA PREPARATION for mfa ===
-
-    # firstly cleaning the thai text from the original script
-    #  Normalize Thai chars (fixes weird unicode ordering)
-    cleaned_script_text_from_json = normalize(raw_script_text_from_json)
-
-    # Remove invisible chars / zero-width spaces that mess up tokenizers
-    cleaned_script_text_from_json = cleaned_script_text_from_json.replace("\u200b", "")
-
-    '''
-    MFA cannot "guess" what is being said in the .wav file 
-    (it is not a Speech-to-Text engine like Whisper in this mode). 
+    > why do we need to do this? Why are we preparing folders to prepare data for mfa?
+    MFA cannot "guess" what is being said in the .wav file
+    (it is not a Speech-to-Text engine like Whisper in this mode).
     It needs the text_script tell it exactly what words are in the audio so it can figure out when those words happen.
-    
+
     The MFA Pairing Logic: When we point MFA to a folder, it looks for pairs with matching names:
     - It finds source.wav → "Okay, here is the sound."
     - It looks for source.lab → "Okay, here are the words I need to find in that sound."
 
     If we only provided the .wav, MFA would throw an error because it wouldn't know what words to align.
-    '''
+    """
 
 
-    # making a folder to put in the prepared data for mfa, and a folder to put in the output files
     temp_mfa_input = os.path.join(output_dir, "mfa_input_data")
     temp_mfa_output = os.path.join(output_dir, "mfa_output_data")
+
     os.makedirs(temp_mfa_input, exist_ok=True)
     os.makedirs(temp_mfa_output, exist_ok=True)
 
-    # 1. Clean up old files to prevent errors
+    # Clean up old files in input to prevent errors
     for f in os.listdir(temp_mfa_input):
         os.remove(os.path.join(temp_mfa_input, f))
 
-    # 2. Tokenize Thai Script (Must add spaces for MFA)
+    return temp_mfa_input, temp_mfa_output
 
-    # creating a custom dictionary to put inject into tokenization
+
+def _preprocess_thai_text(raw_text):
+    """Normalizes Thai characters and removes invisible zero-width spaces."""
+    # Normalize Thai chars (fixes weird unicode ordering)
+    cleaned = normalize(raw_text)
+    # Remove invisible chars
+    cleaned = cleaned.replace("\u200b", "")
+    return cleaned
+
+
+def _tokenize_thai_script(thai_text):
+    """
+    Tokenizes Thai text using PyThaiNLP with a custom dictionary injected
+    to handle slang/specific words correctly. Returns a space-separated string.
+    """
+
     # Words that PyThaiNLP usually breaks incorrectly
     custom_words = {
         "อาบอบนวด",  # Brothel (Might get split into อา-บอบ-นวด)
@@ -95,43 +70,58 @@ def run_mfa_pipeline(raw_script_text_from_json, audio_file_path, output_dir, mfa
         "แม่เจ้าโว้ย", # Exclamation
     }
 
-    # Create a Trie (a specialized data structure for tokenization)
+    # Create a Trie (specialized data structure for tokenization)
     custom_dictionary_trie = dict_trie(custom_words)
 
-    # 'newmm' is standard dictionary-based tokenizer for Thai? language
-    # keep_whitespace=False removes newlines/tabs
+    # 'newmm' is standard dictionary-based tokenizer
     words = word_tokenize(
-        cleaned_script_text_from_json,
+        thai_text,
         engine="newmm",
         custom_dict=custom_dictionary_trie,
         keep_whitespace=False
     )
-    tokenized_clean_script_text = " ".join(words) # 1 string
 
-    # 3. Move Audio & Create .lab file
-    # We copy and rename audio to 'source.wav' temporarily to keep it simple
+    # Join into a single string with spaces for MFA
+    tokenized_text = " ".join(words)
+
+    return tokenized_text
+
+
+def _stage_audio_and_script_files_for_mfa(audio_file_path, tokenized_text, mfa_input_dir):
+    """
+    Copies the audio source file and creates the .lab file from the tokenized words
+    These 2 paired files with the same name are required by MFA in the input dir
+    """
+
+    # Copy and rename audio to 'source.wav'  temporarily to keep it simple
     # thus `temp_mfa_input` became a copy of the input audio file
-    shutil.copy(src=audio_file_path, dst=os.path.join(temp_mfa_input, "source.wav"))
+    shutil.copy(src=audio_file_path, dst=os.path.join(mfa_input_dir, "source.wav"))
 
-    # writing the tokenized and clean script text to a .lab file named source
+    #  Write the .lab file (transcript)
+    # writing the tokenized and clean script text to a .lab file named source.lab
     # .lab file is just a text file .txt but researchers decided to use .lab to
     # denote files that contain the transcript (the words) corresponding to an audio file.
-    with open(os.path.join(temp_mfa_input, "source.lab"), "w", encoding="utf-8") as f:
-        f.write(tokenized_clean_script_text)
+    lab_file_path = os.path.join(mfa_input_dir, "source.lab")
+    with open(lab_file_path, "w", encoding="utf-8") as f:
+        f.write(tokenized_text)
+
+    # now we should have both the audio and .lab in the same input folder for mfa
 
 
-    # === B. EXECUTION (The Bridge to the main pipeline) ===
-    print("  ⏳ Running MFA Alignment (this might take a moment)...")
+def _execute_mfa_subprocess(input_dir, output_dir):
+    """
+    Constructs the Conda run command and executes MFA alignment via subprocess.
 
-    '''
-    Syntax of mfa: 
+    Set up conda and download mfa first.
+
+    Syntax of mfa:
     `mfa align [input_folder] [dictionary] [acoustic_model] [output_folder]`
-    
+
     Example command: mfa align ./mfa_input_data thai_mfa thai_mfa ./mfa_output_data --clean --beam 100
     `--beam 100`: Increases the search space. Helps if there are pauses or slight speed variations.
     `--clean`: Clears old cache to prevent errors.
-    
-    
+
+
     Usually, we have to do this in the terminal
     ```
     conda activate mfa   # Modifies shell PATH to point to mfa/bin
@@ -139,20 +129,24 @@ def run_mfa_pipeline(raw_script_text_from_json, audio_file_path, output_dir, mfa
     conda deactivate     # Restores shell PATH
     ```
     but it is a long and there is a short-hand way with just 1 line of command.
-    
+
     Shorthand 'Exex' Way
     `conda run -n mfa [mfa command]`
     This spins up a temporary sub-shell, sets the `PATH` strictly for that command, executes it, and immediately closes the sub-shell.
-    
+
 
     So, the command we want to run in terminal:
     `conda run -n mfa mfa align [input_folder] [dictionary] [acoustic_model] [output_folder] --clean --beam 100`
     Note: we assume 'mfa' env is set up.
-    '''
+    """
 
+
+    print("  ⏳ Running MFA Alignment (this might take a moment)...")
+
+    # Constructing command to run inside 'mfa' conda environment
     command = [
         "conda", "run", "-n", "mfa", "mfa", "align",
-        temp_mfa_input, "thai_mfa", "thai_mfa", temp_mfa_output,
+        input_dir, "thai_mfa", "thai_mfa", output_dir,
         "--clean", "--beam", "100", "--output_format", "long_textgrid"
     ]
 
@@ -160,44 +154,95 @@ def run_mfa_pipeline(raw_script_text_from_json, audio_file_path, output_dir, mfa
         # This halts Python until MFA finishes
         result = subprocess.run(command, check=True, capture_output=True, text=True)
         print(result.stdout) # Uncomment for debugging
+
     except subprocess.CalledProcessError as e:
         print("❌ MFA Failed!")
         print(e.stderr)
         raise e
 
-    # === C. PARSING ===
-    # parsing mfa output to json to use in the main pipeline
-    textgrid_path = os.path.join(temp_mfa_output, "source.TextGrid")
+
+def _parse_mfa_results(mfa_output_dir):
+    """
+    Reads the resulting .TextGrid file from the mfa execution and converts it
+    to a clean JSON format that can be used in the main pipeline.
+    """
+    textgrid_path = os.path.join(mfa_output_dir, "source.TextGrid")
 
     if not os.path.exists(textgrid_path):
         raise FileNotFoundError("MFA finished but no .TextGrid file found.")
 
     textgrid_file = textgrid.TextGrid.fromFile(textgrid_path)
-    word_tier = textgrid_file[0] # Usually index 0 is words, 1 is phones
+    word_tier = textgrid_file[0] # Usually index 0 is words,  1 is phones
 
-    final_json = []
+    parsed_transcript_timestamp_data = []
 
     for interval in word_tier:
         word = interval.mark
+        # Filter out empty strings or MFA specific silence markers
         if not word or word in ["", "<eps>"]:
             continue
 
-        final_json.append({
+        parsed_transcript_timestamp_data.append({
             "word": word,
             "start": round(interval.minTime, 3),
             "end": round(interval.maxTime, 3)
         })
 
-
-    # write json for debug
-    save_json_file(final_json, os.path.join(output_dir, "mfa_aligned_transcript_word_timestamp_data.json"))
-
-    return final_json
+    return parsed_transcript_timestamp_data
 
 
+# ==========================================
+#        Orchestrator function that runs the mfa pipeline
+# ==========================================
 
 
-# ========== Testing
+def run_mfa_pipeline(
+        raw_script_text_from_json,
+        audio_file_path,
+        output_dir,
+        mfa_cmd="mfa"
+):
+    """
+    Transcribes subtitles and timestamps data from input audio and script files with MFA.
+    Orchestrator function for the MFA alignment pipeline.
+    """
+
+    # Setup Environment
+    mfa_input_dir, mfa_output_dir = _setup_mfa_directories(output_dir=output_dir)
+
+    # Prepare Text (Clean & Tokenize)
+    cleaned_script_text = _preprocess_thai_text(raw_text=raw_script_text_from_json)
+    tokenized_clean_script_text = _tokenize_thai_script(thai_text=cleaned_script_text)
+
+    # 3. Stage files for mfa (check function description for more info)
+    _stage_audio_and_script_files_for_mfa(
+        audio_file_path=audio_file_path,
+        tokenized_text=tokenized_clean_script_text,
+        mfa_input_dir=mfa_input_dir,
+    )
+
+    # 4. Execute Alignment with MFA in terminal -> this will output file in the output dir
+    _execute_mfa_subprocess(
+        input_dir=mfa_input_dir,
+        output_dir=mfa_output_dir
+    )
+
+    # 5. Parse Results to json
+    aligned_transcript_timestamps_data_json = _parse_mfa_results(mfa_output_dir=mfa_output_dir)
+
+    # 6. Save json data as a file for inspection
+    save_json_file(
+        dict_or_json_data=aligned_transcript_timestamps_data_json,
+        json_file_name_path=os.path.join(output_dir, "mfa_aligned_transcript_word_timestamp_data.json")
+    )
+
+    return aligned_transcript_timestamps_data_json
+
+
+# ==========================================
+#        debug main
+# ==========================================
+
 
 if __name__ == "__main__":
     narration_audio_file = 'correct_test_files/raw_original_audio_F_Gem.wav'
@@ -221,14 +266,5 @@ if __name__ == "__main__":
 
     else:
         raise Exception("!!! Raw audio file couldn't be found")
-
-
-
-
-
-
-
-
-
 
 
