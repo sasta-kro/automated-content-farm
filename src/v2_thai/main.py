@@ -7,7 +7,7 @@ from moviepy.video.io.ffmpeg_tools import ffmpeg_merge_video_audio
 from src.v2_thai.generate_audio_th import generate_audio_narration_file_th
 from src.v2_thai.generate_script_th import generate_thai_script_data, translate_thai_content_to_eng
 from src.v2_thai.generate_subtitle_clip import generate_subtitle_clips, create_debug_subtitle_clip
-from src.v2_thai.transcription_mfa_alignment_mini_pipeline_without_unkFix import run_mfa_pipeline
+from src.v2_thai.transcription_mfa_alignment_mini_pipeline import run_mfa_pipeline
 
 # Define Directories and files
 TEMP_PROCESSING_DIR = "___temp_script_workspace"

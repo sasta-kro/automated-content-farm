@@ -342,7 +342,7 @@ def run_mfa_pipeline(
         json_file_name_path=os.path.join(output_dir, "mfa_aligned_transcript_word_timestamp_data.json")
     )
 
-    return raw_aligned_transcript_data_json
+    return repaired_aligned_transcript_data
 
 
 # ==========================================
