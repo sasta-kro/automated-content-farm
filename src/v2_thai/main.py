@@ -4,7 +4,7 @@ import os
 
 from moviepy.video.io.ffmpeg_tools import ffmpeg_merge_video_audio
 
-from src.v2_thai.align_transcription_to_script import align_transcription_to_script_and_correct_timestamps
+from src.v2_thai.scrapped_align_transcription_to_script import align_transcription_to_script_and_correct_timestamps
 from src.v2_thai.generate_audio_th import generate_audio_narration_file_th
 from src.v2_thai.generate_script_th import generate_thai_script_data, translate_thai_content_to_eng
 from src.v2_thai.generate_subtitle_clip import generate_subtitle_clips, create_debug_subtitle_clip
