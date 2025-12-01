@@ -60,18 +60,37 @@ def _tokenize_thai_script(thai_text):
     to handle slang/specific words correctly. Returns a space-separated string.
     """
 
-    # Words that PyThaiNLP usually breaks incorrectly
-    custom_words = {
+    # Words that PyThaiNLP usually breaks incorrectly. A custom dictionary of words to inject to the tokenizer
+    custom_words_netizen_slang = [
         "อาบอบนวด",  # Brothel (Might get split into อา-บอบ-นวด)
         "ป้ะ",       # Slang for "Right?"
         "แกรร",      # Dragged out "Girl"
         "พอดี",      # Sometimes splits if next to a name
         "ช็อค",      # Shock
         "แม่เจ้าโว้ย", # Exclamation
-    }
+
+        # General Emphasizers & Adjectives
+        "ฉ่ำ", "ของแทร่", "จึ้ง", "ตึ้ง", "เริ่ด", "ปัง", "นัมเบอร์วัน",
+        "เกินต้าน", "สุดเบอร์", "ยืนหนึ่ง", "ดือ", "ชื่นใจ", "ใจฟู",
+
+        # Actions & Reactions
+        "ช็อตฟีล", "แกง", "ป้ายยา", "ตำ", "บู้บี้", "หยุมหัว",
+        "มองบน", "พักก่อน", "จะเครซี่", "กำหมัด", "ทัวร์ลง",
+
+        # Person Types & Status
+        "ตัวแม่", "ตัวมารดา", "ตัวตึง", "ตัวลูก", "น้อน", "ต้าว",
+        "สลิ่ม", "สามกีบ", "ติ่ง", "เบียว",
+
+        # Feelings & Vibes
+        "นอยด์", "ฟิน", "บรอ", "โฮป", "อ่อม", "เกรี้ยวกราด",
+        "โป๊ะ", "เลิ่กลั่ก", "ตุย", "ขิต", "สู่ขิต",
+
+        # Context-Specific (Gaming/Streaming/Social)
+        "กาว", "เกลือ", "ขิง", "ด้อม", "เมพ", "นู้บ", "หัวร้อน"
+    ]
 
     # Create a Trie (specialized data structure for tokenization)
-    custom_dictionary_trie = dict_trie(custom_words)
+    custom_dictionary_trie = dict_trie(custom_words_netizen_slang)
 
     # 'newmm' is standard dictionary-based tokenizer
     words = word_tokenize(
