@@ -71,10 +71,16 @@ def main():
 
 
     """ =========== 4. Generate subtitle clips"""
-    subtitle_text_clips = generate_subtitle_clips(aligned_transcript_word_and_time_data)
+    list_of_moviepyTextClips = generate_subtitle_clips(
+        word_data=aligned_transcript_word_and_time_data,
+        output_directory=TEMP_PROCESSING_DIR,
+    )
 
     # temp to test out the subtitle clip
-    create_debug_subtitle_clip(subtitle_text_clips)
+    create_debug_subtitle_clip(
+        TextClips_list=list_of_moviepyTextClips,
+        output_dir="___debug_generated_subtitle_clips"
+    )
 
 
 

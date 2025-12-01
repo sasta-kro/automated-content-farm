@@ -1,7 +1,9 @@
 import asyncio
+import json
 import os
 import numpy as np
 from moviepy.editor import TextClip, CompositeVideoClip, ColorClip, VideoFileClip
+from moviepy.video.io.ffmpeg_tools import ffmpeg_merge_video_audio
 
 
 def generate_subtitle_clips(
@@ -11,14 +13,15 @@ def generate_subtitle_clips(
         fontsize=120,        # Thai needs slightly smaller font than Eng usually
         color='yellow',     # Yellow is standard for Thai TikTok
         stroke_width=4,
-        stroke_color='black'
+        stroke_color='black',
+        output_directory=""
 ):
     """
     Generates a list of TextClips based on word timings.
     """
     print(f"4. 🎬 Generating {len(word_data)} subtitle clips...")
 
-    text_clips = []
+    TextClips_list = []
     # Iterate through words
     for item in word_data:
         word_text = item['word']
@@ -54,43 +57,62 @@ def generate_subtitle_clips(
             .set_start(start_time) \
             .set_duration(duration)
 
-        text_clips.append(txt_clip)
+        TextClips_list.append(txt_clip)
 
-    return text_clips
+    return TextClips_list
 
-def create_debug_subtitle_clip(text_clips, output_filename="debug_test_subtitles_vid.mp4"):
+def create_debug_subtitle_clip(TextClips_list, output_dir=""):
     """
-    Creates a black video with subtitles to test font rendering.
+    Creates a white video with subtitles to test font rendering.
     """
-    # 9:16 Aspect Ratio (Vertical Video)
-    W, H = 1080, 1920
+    W, H = 1080, 1920  # 9:16 Aspect Ratio (Vertical Video)
 
     # Background (white)
-    # Duration = end of last word + 1 second
+    # Duration = 60 seconds placeholder
     bg_clip = ColorClip(size=(W, H), color=(255,255,255), duration=60.0)
 
 
     # Composite
-    final_output = CompositeVideoClip([bg_clip] + text_clips)
+    final_output = CompositeVideoClip([bg_clip] + TextClips_list)
 
     # Write
-    print(f"   💾 Rendering debug video to {output_filename}...")
-    final_output.write_videofile(output_filename, fps=24)
+    os.makedirs(output_dir, exist_ok=True) # create the folder if it doesn't exist
+    filename = os.path.join(output_dir, "debug_test_subtitle_clip.mp4")
+
+    print(f"   💾 Rendering debug video to {filename}...")
+    final_output.write_videofile(filename, fps=24)
+
+
+# ------------------ Testing
 
 
 if __name__ == "__main__":
-    # === TEST DATA (Based on your output) ===
-    # "แก... เรื่องนี้พีค" (Hey... this story is peak)
-    mock_word_data = [
-        {'word': 'แก', 'start': 0.5, 'end': 0.9},
-        {'word': '...', 'start': 0.9, 'end': 1.2},
-        {'word': 'เรื่อง', 'start': 1.2, 'end': 1.6},
-        {'word': 'นี้', 'start': 1.6, 'end': 1.9},
-        {'word': 'พีค', 'start': 1.9, 'end': 2.5},
-        {'word': 'มาก', 'start': 2.5, 'end': 3.0},
-    ]
+    with open("correct_test_files/mfa_aligned_transcript_word_timestamp_data_with_unk.json") as f:
+        test_word_timestamp_data = json.load(f)
 
-    # Run the test
-    # Ensure you have the font installed or change "Chonburi-Regular" to "Arial" for testing
-    text_clips = generate_subtitle_clips(mock_word_data)
-    create_debug_subtitle_clip(text_clips)
+    debug_directory = "___debug_generated_subtitle_clips"
+
+    # generate text clips
+    text_clips = generate_subtitle_clips(
+        word_data=test_word_timestamp_data,
+        output_directory=debug_directory,
+    )
+
+    # create debug video
+    create_debug_subtitle_clip(
+        TextClips_list=text_clips,
+        output_dir=debug_directory
+    )
+
+
+    # temp comment out to merge audio and video
+    ffmpeg_merge_video_audio(
+        video=os.path.join(debug_directory, "debug_test_subtitle_clip.mp4"),
+        audio="correct_test_files/raw_original_audio_F_Gem.wav",
+        output=os.path.join(debug_directory, "debug_test_subtitles_vid_with_sound.mp4"),
+        vcodec='copy', # 'copy' means don't re-render video (Fast!)
+        acodec='aac', # audio codec
+        ffmpeg_output=False, # Hides logs
+        logger=None
+    )
+    print(f"✅ Debug subtitle vid with sound ")
