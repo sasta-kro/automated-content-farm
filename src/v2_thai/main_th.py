@@ -23,7 +23,7 @@ def main():
     main function of the automated content farm
     """
 
-    """ ========== 1. Generate Script """
+    """ ========== 1. Generate Script ====================="""
     # Use "random viral story" to let Gemini be creative
     original_script_content_data_json = asyncio.run(
         generate_thai_script_data(
@@ -43,7 +43,7 @@ def main():
         return
 
 
-    """ ========= 2. Generate Audio """
+    """ ========= 2. Generate Audio ===================== """
     narration_audio_file = asyncio.run(
         generate_audio_narration_file_th(
             script_data=original_script_content_data_json,
@@ -56,7 +56,10 @@ def main():
     """ ========== 3. Generate transcription for dynamic video subtitles"""
     if os.path.exists(narration_audio_file):
         whisper_raw_word_and_time_data = asyncio.run(
-            generate_whisper_timed_transcript_th(narration_audio_file)
+            generate_whisper_timed_transcript_th(
+                audio_file_path=narration_audio_file,
+                output_folder_path=TEMP_PROCESSING_DIR,
+            )
         )
     else:
         raise " !!! raw audio file couldn't be found"
@@ -66,6 +69,7 @@ def main():
     aligned_transcript_word_and_time_data = align_transcription_to_script_and_correct_timestamps(
         original_script= original_script_content_data_json['script_thai'] ,
         whisper_word_data=whisper_raw_word_and_time_data,
+        output_folder_path=TEMP_PROCESSING_DIR
     )
 
     """ =========== 4. Generate subtitle clips"""
@@ -81,15 +85,16 @@ def main():
 
 # ======== EXECUTION =====
 if __name__ == "__main__":
-    # main()
+    main()
 
-    ffmpeg_merge_video_audio(
-        video="debug_test_subtitles_vid.mp4",
-        audio="___temp_script_workspace/spedup_audio_narration.mp3",
-        output="debug_subtitle_vid_with_audio.mp4",
-        vcodec='copy', # 'copy' means don't re-render video (Fast!)
-        acodec='aac', # audio codec
-        ffmpeg_output=False, # Hides logs
-        logger=None
-    )
-    print(f"✅ Final Video")
+    # # temp comment out to merge audio and video
+    # ffmpeg_merge_video_audio(
+    #     video="debug_test_subtitles_vid.mp4",
+    #     audio="___temp_script_workspace/spedup_audio_narration.mp3",
+    #     output="debug_subtitle_vid_with_audio.mp4",
+    #     vcodec='copy', # 'copy' means don't re-render video (Fast!)
+    #     acodec='aac', # audio codec
+    #     ffmpeg_output=False, # Hides logs
+    #     logger=None
+    # )
+    # print(f"✅ Final Video")

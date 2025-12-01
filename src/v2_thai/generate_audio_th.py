@@ -121,9 +121,9 @@ async def generate_with_gemini(text: str, gender: str, filename: str):
         print(f"   ❌ Gemini TTS Failed: {e}")
 
 
-# ====================== Helper for the main wrapper function, to speed up the audio
+# ====================== Helper for the main wrapper function, to speed up the audio (i will use this later in the pipeline, need to refactor as well)
 
-async def process_audio_with_ffmpeg(input_path: str, speed: float = 1.2) -> str:
+async def speed_up_audio_with_ffmpeg(input_path: str, speed: float = 1.2) -> str:
     """
     Speeds up audio using ffmpeg-python without pitch shifting (No Chipmunk Effect).
     """
@@ -215,18 +215,22 @@ async def generate_audio_narration_file_th(
 
     if raw_audio_output_file:
         print(f"   Raw Audio saved to: {raw_audio_output_file}")
+        return raw_audio_output_file # returns the un-sped-up audio
 
-
-    # Post-Processing (Speed up + High Quality Convert)
-    if raw_audio_output_file and os.path.exists(raw_audio_output_file):
-        # Apply 20% speed boost (1.2x)
-        sped_up_audio_file = await process_audio_with_ffmpeg(raw_audio_output_file, speed=1.25)
-
-        print(f"   ✅ Sped-up Audio saved to: {sped_up_audio_file}\n")
-        return sped_up_audio_file
-
-    print("   ❌ Audio generation completely failed.")
     return None
+
+
+    # decided to speed up both the audio and video with subtitles later in the pipeline to make it easier for whisper
+    # # Post-Processing (Speed up + High Quality Convert)
+    # if raw_audio_output_file and os.path.exists(raw_audio_output_file):
+    #     # Apply 20% speed boost (1.2x)
+    #     sped_up_audio_file = await speed_up_audio_with_ffmpeg(raw_audio_output_file, speed=1.25)
+    #
+    #     print(f"   ✅ Sped-up Audio saved to: {sped_up_audio_file}\n")
+    #     return sped_up_audio_file
+    #
+    # print("   ❌ Audio generation completely failed.")
+    # return None
 
 
 

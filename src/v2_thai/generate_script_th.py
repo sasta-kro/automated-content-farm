@@ -9,7 +9,7 @@ from pydantic import BaseModel, Field
 
 import json  # to parse json from gemini response
 
-
+from src.v2_thai.Util_functions import save_json_file
 
 # Load API Key
 load_dotenv()
@@ -98,15 +98,8 @@ async def generate_thai_script_data(
 
         # Save to a JSON file for inspection
         output_json_file_name = "original_script_data_th.json"
-        if data:
-            with open(
-                    os.path.join(output_folder_path, output_json_file_name),
-                    "w", encoding="utf-8"
-            ) as f:
-                json.dump(data, f, ensure_ascii=False, indent=4)
-            print(f"  >>> Saved full transcript to '{output_json_file_name}' ")
-        else:
-            raise f"Couldn't save JSON for transcription. name: {output_json_file_name}"
+        full_json_save_location = os.path.join(output_folder_path, output_json_file_name)
+        save_json_file(data, full_json_save_location)
 
         return data
 
