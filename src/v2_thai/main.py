@@ -4,11 +4,10 @@ import os
 
 from moviepy.video.io.ffmpeg_tools import ffmpeg_merge_video_audio
 
-from src.v2_thai.scrapped_align_transcription_to_script import align_transcription_to_script_and_correct_timestamps
 from src.v2_thai.generate_audio_th import generate_audio_narration_file_th
 from src.v2_thai.generate_script_th import generate_thai_script_data, translate_thai_content_to_eng
 from src.v2_thai.generate_subtitle_clip import generate_subtitle_clips, create_debug_subtitle_clip
-from src.v2_thai.generate_transcript_for_subtitles import generate_whisper_timed_transcript_th
+from src.v2_thai.transcription_mfa_alignment_mini_pipeline import run_mfa_pipeline
 
 # Define Directories and files
 TEMP_PROCESSING_DIR = "___temp_script_workspace"
@@ -53,32 +52,29 @@ def main():
     )
 
 
-    """ ========== 3. Generate transcription for dynamic video subtitles"""
+    """ ========== 3. Generate transcript with timestamps for dynamic video subtitles via MFA"""
+
     if os.path.exists(narration_audio_file):
-        whisper_extracted_raw_word_and_time_data = asyncio.run(
-            generate_whisper_timed_transcript_th(
+        try:
+            aligned_transcript_word_and_time_data = run_mfa_pipeline(
+                raw_script_text_from_json=original_script_content_data_json['script_text'],
                 audio_file_path=narration_audio_file,
-                output_folder_path=TEMP_PROCESSING_DIR,
+                output_dir=TEMP_PROCESSING_DIR
             )
-        )
+            print(f"✅ Alignment Complete: {len(aligned_transcript_word_and_time_data)} words aligned.")
+
+        except Exception as e:
+            print(f"❌ Alignment Failed: {e}")
+            return
     else:
-        raise " !!! raw audio file couldn't be found"
+        raise Exception("!!! Raw audio file couldn't be found")
 
-
-    """ =========== 3.5 Align the Transcription to the Original Script and Correct Timestamps to word-level instead of char"""
-    aligned_transcript_word_and_time_data = align_transcription_to_script_and_correct_timestamps(
-        original_script= original_script_content_data_json['script_thai'] ,
-        whisper_word_data=whisper_extracted_raw_word_and_time_data,
-        output_folder_path=TEMP_PROCESSING_DIR
-    )
 
     """ =========== 4. Generate subtitle clips"""
     subtitle_text_clips = generate_subtitle_clips(aligned_transcript_word_and_time_data)
 
     # temp to test out the subtitle clip
     create_debug_subtitle_clip(subtitle_text_clips)
-
-
 
 
 

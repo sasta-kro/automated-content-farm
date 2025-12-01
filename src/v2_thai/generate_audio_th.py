@@ -1,4 +1,5 @@
 import asyncio
+import json
 import os
 
 from dotenv import load_dotenv
@@ -201,8 +202,9 @@ async def generate_audio_narration_file_th(
             filename= f"{filename}_Gem.wav"
         )
 
-    # Fallback or Default to EdgeTTS
+    # Fallback or Default to EdgeTTS (or stop function)
     if not raw_audio_output_file:
+        return
 
         if use_gemini: # only print when gemini bool is set to true
             print("   ⚠️ Falling back to EdgeTTS...")
@@ -247,7 +249,16 @@ if __name__ == "__main__":
         "gender": "F"
     }
 
+
+    try:
+        with open('data.json', 'r') as f:
+            script_data_json = json.load(f)
+    except FileNotFoundError:
+        print("Error: File not found.")
+
     # Run the test
     asyncio.run(generate_audio_narration_file_th(
-        test_data, use_gemini=True)
+        script_data=script_data_json,
+        output_folder_path="___debug_audio_generation",
+        use_gemini=True)
     )
