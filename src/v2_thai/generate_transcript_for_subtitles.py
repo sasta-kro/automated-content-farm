@@ -1,3 +1,5 @@
+from pprint import pprint
+
 import mlx_whisper
 import json
 import os
@@ -29,11 +31,13 @@ async def generate_whisper_timed_transcript_th(audio_file_path: str, output_fold
             language="th", # forcing to let it know that it is Thai language (ignore warning, it works)
             verbose=False,
         )
+        print(f"   Whisper transcription data received (raw json) ")
+
 
         # Save raw full whisper transcription data to a JSON file for inspection
         output_raw_whisper_data_json_file_name = "raw_full_whisper_transcription.json"
         json_full_path= os.path.join(output_folder_path, output_raw_whisper_data_json_file_name)
-        save_json_file(json_full_path, whisper_transcription_data)
+        save_json_file(whisper_transcription_data, json_full_path)
 
         # Parse the result to flatten it into a simple list of words
         # Whisper returns: {'segments': [{'words': [...]}, ...]}
@@ -58,7 +62,7 @@ async def generate_whisper_timed_transcript_th(audio_file_path: str, output_fold
         # Save just the word and timestamps data (extracted from the raw whisper) to a JSON file for inspection
         output_json_file_name = "word_and_timestamps_data_extracted_from_whisper.json"
         json_full_path= os.path.join(output_folder_path, output_json_file_name)
-        save_json_file(json_full_path, whisper_transcription_data)
+        save_json_file(words_and_timestamps_data, json_full_path)
 
         return words_and_timestamps_data
 
@@ -78,6 +82,8 @@ if __name__ == "__main__":
     word_data = asyncio.run(generate_whisper_timed_transcript_th(TEST_AUDIO))
     print("-----------")
     print("word_data = ", word_data)
+
+    pprint(word_data)
 
 
 

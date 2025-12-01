@@ -28,7 +28,7 @@ def main():
     original_script_content_data_json = asyncio.run(
         generate_thai_script_data(
             topic=  "guy discovers my sister working in a brothel",
-            time_length="30-45",
+            time_length="15-20",   # TODO: don't forget to change this
             output_folder_path=TEMP_PROCESSING_DIR
         )
     )
@@ -55,7 +55,7 @@ def main():
 
     """ ========== 3. Generate transcription for dynamic video subtitles"""
     if os.path.exists(narration_audio_file):
-        whisper_raw_word_and_time_data = asyncio.run(
+        whisper_extracted_raw_word_and_time_data = asyncio.run(
             generate_whisper_timed_transcript_th(
                 audio_file_path=narration_audio_file,
                 output_folder_path=TEMP_PROCESSING_DIR,
@@ -68,7 +68,7 @@ def main():
     """ =========== 3.5 Align the Transcription to the Original Script and Correct Timestamps to word-level instead of char"""
     aligned_transcript_word_and_time_data = align_transcription_to_script_and_correct_timestamps(
         original_script= original_script_content_data_json['script_thai'] ,
-        whisper_word_data=whisper_raw_word_and_time_data,
+        whisper_word_data=whisper_extracted_raw_word_and_time_data,
         output_folder_path=TEMP_PROCESSING_DIR
     )
 

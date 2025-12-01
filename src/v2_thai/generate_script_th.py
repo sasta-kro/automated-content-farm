@@ -23,11 +23,13 @@ class ThaiScriptOutput(BaseModel):
 
 async def generate_thai_script_data(
         topic: str = "spicy cheating story that got karma",
-        time_length: str = "30-45",
+        time_length: str = "30-45", # default param
         output_folder_path: str = ""
 ):
     """
     Generates a viral-style Thai short-form script using Gemini.
+    WARNING: `time_length` is not very accurate, it returns something longer
+
     Returns: JSON with title_thai, script_thai, and gender.
     """
     print(f"1. 🇹🇭 Asking Gemini to cook up a '{topic}' story script in Thai...")
@@ -53,7 +55,6 @@ async def generate_thai_script_data(
     
     Target length: {time_length} seconds spoken 
     """
-    # (approx 300-400 Thai characters for 40-60 secs)
 
     # User Prompt
     prompt = f"""
@@ -105,8 +106,8 @@ async def generate_thai_script_data(
 
     except Exception as e:
         print(f"❌ Error generating script: {e}")
+        raise e
         # Return a dummy fallback for testing if API fails
-        return None
 
 
 # for translation

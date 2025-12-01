@@ -367,5 +367,4 @@ async def main():
 
 if __name__ == "__main__":
     asyncio.run(main())
-    # TODO: replace tts with Gemini tts (more realistic)
     # TODO: get satisfying gameplay stock footage vids. > choose random vid > choose random segment from vid > use as bg

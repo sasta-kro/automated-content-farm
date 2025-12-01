@@ -16,7 +16,7 @@ def generate_subtitle_clips(
     """
     Generates a list of TextClips based on word timings.
     """
-    print(f"   🎬 Generating {len(word_data)} subtitle clips...")
+    print(f"4. 🎬 Generating {len(word_data)} subtitle clips...")
 
     text_clips = []
     # Iterate through words
