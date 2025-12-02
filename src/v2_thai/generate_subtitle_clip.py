@@ -9,7 +9,8 @@ from moviepy.video.io.ffmpeg_tools import ffmpeg_merge_video_audio
 def generate_subtitle_clips(
         word_data,
         videosize=(1080, 1920),
-        font="/Users/saiaikeshwetunaung/Library/Fonts/Chonburi-Regular.ttf", # OR "Prompt-Bold"
+        # font="/Users/saiaikeshwetunaung/Library/Fonts/Chonburi-Regular.ttf", # OR
+        font= "/Users/saiaikeshwetunaung/Library/Fonts/Prompt-Bold.ttf",
         fontsize=120,        # Thai needs slightly smaller font than Eng usually
         color='yellow',     # Yellow is standard for Thai TikTok
         stroke_width=4,
@@ -48,7 +49,6 @@ def generate_subtitle_clips(
 
         except Exception as e:
             print(f"❌ Font Error: {e}")
-            print("Try using a generic font like 'Arial' temporarily to debug.")
             raise e
 
         # Position: Center of the screen
@@ -81,13 +81,14 @@ def create_debug_subtitle_clip(TextClips_list, output_dir=""):
 
     print(f"   💾 Rendering debug video to {filename}...")
     final_output.write_videofile(filename, fps=24)
+    return filename
 
 
 # ------------------ Testing
 
 
 if __name__ == "__main__":
-    with open("correct_test_files/mfa_aligned_transcript_word_timestamp_data_with_unk.json") as f:
+    with open("correct_test_files/mfa_aligned_transcript_data_with_unk.json") as f:
         test_word_timestamp_data = json.load(f)
 
     debug_directory = "___debug_generated_subtitle_clips"

@@ -53,7 +53,8 @@ async def generate_thai_script_data(
         2. BODY: Fast-paced storytelling, keep it juicy.
         3. PLOT TWIST/ENDING: Unexpected or funny conclusion.
     
-    Target length: {time_length} seconds spoken 
+    Target length: {time_length} seconds spoken.
+    DO NOT EXCEED THE TIME LIMIT. DO NOT GENERATE MARKDOWN FORMATTING IN THE SCRIPT
     """
 
     # User Prompt
@@ -78,7 +79,8 @@ async def generate_thai_script_data(
         response = client.models.generate_content(
             model="gemini-2.5-pro",
             contents=prompt,
-
+            # The SDK might return a parsed object or text depending on the version.
+            # We handle the text parsing to be safe with the 'response_mime_type' enforcement
             config=types.GenerateContentConfig(
                 system_instruction=system_instruction,
                 response_mime_type="application/json", # Forces JSON output
@@ -86,8 +88,8 @@ async def generate_thai_script_data(
                 temperature=1.25, # High temperature = more creative/drama
             ),
         )
-        # The SDK might return a parsed object or text depending on the version.
-        # We handle the text parsing to be safe with the 'response_mime_type' enforcement
+        if response: print("    (response received)")
+
 
         # Parse JSON
         raw_json = response.text
@@ -101,6 +103,8 @@ async def generate_thai_script_data(
         output_json_file_name = "original_script_data_th.json"
         full_json_save_location = os.path.join(output_folder_path, output_json_file_name)
         save_json_file(data, full_json_save_location)
+
+        print(" ")
 
         return data
 
@@ -163,7 +167,8 @@ if __name__ == "__main__":
     result = asyncio.run(
         generate_thai_script_data(
             topic=  "guy discovers my sister working in a brothel", #"caught boyfriend cheating with my mother",
-            time_length="30-45"
+            time_length="30-45",
+            output_folder_path="___debug_generated_thai_script",
             )
     )
 

@@ -4,15 +4,23 @@ import os
 
 from moviepy.video.io.ffmpeg_tools import ffmpeg_merge_video_audio
 
-from src.v2_thai.generate_audio_th import generate_audio_narration_file_th
+from src.v2_thai.generate_audio_th_from_script import generate_audio_narration_file_th
 from src.v2_thai.generate_script_th import generate_thai_script_data, translate_thai_content_to_eng
 from src.v2_thai.generate_subtitle_clip import generate_subtitle_clips, create_debug_subtitle_clip
-from src.v2_thai.transcription_mfa_alignment_mini_pipeline_unkFix import run_mfa_pipeline
+from src.v2_thai.transcription_mfa_alignment_mini_pipeline import run_mfa_pipeline
 
-# Define Directories and files
-TEMP_PROCESSING_DIR = "___temp_script_workspace"
+## Define Directories and files
+
+# Get the directory where 'main.py' is actually located
+cwd_PIPELINE_DIR = os.path.dirname(os.path.abspath(__file__))
+
+# Name of the folder that have the temp working files
+TEMP_PROCESSING_DIR = "___0w0__temp_automation_workspace"
+
+# Join it with the cwd so that the files won't be created in the project root
+TEMP_PROCESSING_DIR = os.path.join(cwd_PIPELINE_DIR, TEMP_PROCESSING_DIR)
+
 os.makedirs(TEMP_PROCESSING_DIR, exist_ok=True) # create the folder
-
 
 OUTPUT_DIR = ""
 
@@ -57,15 +65,14 @@ def main():
     if os.path.exists(narration_audio_file):
         try:
             aligned_transcript_word_and_time_data = run_mfa_pipeline(
-                raw_script_text_from_json=original_script_content_data_json['script_text'],
+                raw_script_text_from_json=original_script_content_data_json.get('script_thai'),
                 audio_file_path=narration_audio_file,
                 output_dir=TEMP_PROCESSING_DIR
             )
-            print(f"✅ Alignment Complete: {len(aligned_transcript_word_and_time_data)} words aligned.")
 
         except Exception as e:
             print(f"❌ Alignment Failed: {e}")
-            return
+            raise e
     else:
         raise Exception("!!! Raw audio file couldn't be found")
 
@@ -80,10 +87,22 @@ def main():
     )
 
     # temp to test out the subtitle clip
-    create_debug_subtitle_clip(
+    test_subtitle_clip_file = create_debug_subtitle_clip(
         TextClips_list=list_of_moviepyTextClips,
-        output_dir="___debug_generated_subtitle_clips"
+        output_dir=TEMP_PROCESSING_DIR
     )
+
+    # temp to test out the sutitle clip with sound
+    ffmpeg_merge_video_audio(
+        video=test_subtitle_clip_file,
+        audio=narration_audio_file,
+        output=os.path.join(TEMP_PROCESSING_DIR, "test_temp_subtitles_vid_with_sound.mp4"),
+        vcodec='copy', # 'copy' means don't re-render video (Fast!)
+        acodec='aac', # audio codec
+        ffmpeg_output=False, # Hides logs
+        logger=None
+    )
+    print(">>> ✅ finished combing subtitle clip with audio narration :D")
 
 
 
@@ -92,14 +111,3 @@ def main():
 if __name__ == "__main__":
     main()
 
-    # # temp comment out to merge audio and video
-    # ffmpeg_merge_video_audio(
-    #     video="debug_test_subtitles_vid.mp4",
-    #     audio="___temp_script_workspace/spedup_audio_narration.mp3",
-    #     output="debug_subtitle_vid_with_audio.mp4",
-    #     vcodec='copy', # 'copy' means don't re-render video (Fast!)
-    #     acodec='aac', # audio codec
-    #     ffmpeg_output=False, # Hides logs
-    #     logger=None
-    # )
-    # print(f"✅ Final Video")

@@ -190,7 +190,7 @@ async def generate_audio_narration_file_th(
 
     # joined with the output folder
     # no extension yet. Extension will be added later since edge gives mp3 and gemini give wav
-    filename = os.path.join(output_folder_path, f"raw_original_audio_{gender}")
+    filename = os.path.join(output_folder_path, f"raw_original_audio")
 
     raw_audio_output_file = None
 
@@ -199,33 +199,33 @@ async def generate_audio_narration_file_th(
         raw_audio_output_file = await generate_with_gemini(
             text=text,
             gender=gender,
-            filename= f"{filename}_Gem.wav"
+            filename= f"{filename}.wav"
         )
 
     # Fallback or Default to EdgeTTS (or stop function)
-    if not raw_audio_output_file:
-        return
-
-        if use_gemini: # only print when gemini bool is set to true
-            print("   ⚠️ Falling back to EdgeTTS...")
-
-        raw_audio_output_file = await generate_with_edge_tts(
-            text=text,
-            gender=gender,
-            filename= f"{filename}_Edg.mp3"
-        )
+    if not use_gemini: # only print when gemini bool is set to true
+        try:
+            raw_audio_output_file = await generate_with_edge_tts(
+                text=text,
+                gender=gender,
+                filename= f"{filename}.mp3"
+            )
+        except Exception as e:
+            raise e
 
     if raw_audio_output_file:
-        print(f"   Raw Audio saved to: {raw_audio_output_file}")
-        print()
+        print(f"  >>> Raw Audio saved to: {raw_audio_output_file}")
+        print("✅ Finished generating audio file.")
         return raw_audio_output_file # returns the un-sped-up audio
     else:
-        raise Exception("❌ Raw audio file generation failed or not found or not generated")
+        print("❌ Raw audio file generation failed or not found or not generated")
+        return
 
-    return None
 
 
-    # decided to speed up both the audio and video with subtitles later in the pipeline to make it easier for whisper
+
+
+# decided to speed up both the audio and video with subtitles later in the pipeline to make it easier for whisper
     # # Post-Processing (Speed up + High Quality Convert)
     # if raw_audio_output_file and os.path.exists(raw_audio_output_file):
     #     # Apply 20% speed boost (1.2x)

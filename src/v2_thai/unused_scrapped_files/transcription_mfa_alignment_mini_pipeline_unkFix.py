@@ -306,6 +306,8 @@ def run_mfa_pipeline(
     Orchestrator function for the MFA alignment pipeline.
     """
 
+    print("3. 📝Generating Transcript with word and timestamps for subtitles...")
+
     # Setup Environment
     mfa_input_dir, mfa_output_dir = _setup_mfa_directories(output_dir=output_dir)
 
@@ -329,17 +331,18 @@ def run_mfa_pipeline(
     # 5. Parse Results to json
     raw_aligned_transcript_data_json = _parse_mfa_results(mfa_output_dir=mfa_output_dir)
 
-    # 6. Repair transcript: Fix <unk> tokens using difflib
-    repaired_aligned_transcript_data = _repair_unknown_tokens_with_difflib(
-        tokenized_original_script_text=tokenized_clean_script_text,
-        raw_mfa_data_json=raw_aligned_transcript_data_json,
-    )
+    # 6. Repair transcript: Fix <unk> tokens using difflib #
+    # repaired_aligned_transcript_data = _repair_unknown_tokens_with_difflib(
+    #     tokenized_original_script_text=tokenized_clean_script_text,
+    #     raw_mfa_data_json=raw_aligned_transcript_data_json,
+    # )
+    repaired_aligned_transcript_data = raw_aligned_transcript_data_json # replacement
 
 
     # 7. Save json data as a file for inspection
     save_json_file(
         dict_or_json_data=repaired_aligned_transcript_data,
-        json_file_name_path=os.path.join(output_dir, "mfa_aligned_transcript_word_timestamp_data.json")
+        json_file_name_path=os.path.join(output_dir, "mfa_aligned_transcript_data.json")
     )
 
     return repaired_aligned_transcript_data
@@ -365,7 +368,7 @@ if __name__ == "__main__":
                 audio_file_path=narration_audio_file,
                 output_dir=TEMP_PROCESSING_DIR
             )
-            print(f"✅ Alignment Complete: {len(aligned_transcript_word_and_time_data)} words aligned.")
+            print(f"✅ Transcription and Timestamp Alignment Complete: {len(aligned_transcript_word_and_time_data)} words aligned.\n")
 
         except Exception as e:
             print(f"❌ Alignment Failed: {e}")
