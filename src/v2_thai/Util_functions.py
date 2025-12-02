@@ -1,5 +1,12 @@
 import json
 
+
+if __name__ == "__main__":
+    print("Do not run this file directly. This is a Util collection")
+
+
+
+
 def save_json_file(dict_or_json_data, json_file_name_path: str):
     """
     Custom function to save json file (basically a json.dump wrapper with prints)
@@ -19,3 +26,5 @@ def save_json_file(dict_or_json_data, json_file_name_path: str):
 
     else:
         raise ValueError(f"Couldn't save JSON. Data is empty or None. Target: {json_file_name_path}")
+
+

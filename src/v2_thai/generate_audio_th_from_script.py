@@ -215,7 +215,7 @@ async def generate_audio_narration_file_th(
 
     if raw_audio_output_file:
         print(f"  >>> Raw Audio saved to: {raw_audio_output_file}")
-        print("✅ Finished generating audio file.")
+        print("✅ Finished generating audio file.\n")
         return raw_audio_output_file # returns the un-sped-up audio
     else:
         print("❌ Raw audio file generation failed or not found or not generated")

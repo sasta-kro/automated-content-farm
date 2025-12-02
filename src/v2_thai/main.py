@@ -1,13 +1,18 @@
 import asyncio
 import json
 import os
+import subprocess
 
+import moviepy.video.fx.all as vfx
+
+
+from moviepy.video.io.VideoFileClip import VideoFileClip
 from moviepy.video.io.ffmpeg_tools import ffmpeg_merge_video_audio
 
 from src.v2_thai.generate_audio_th_from_script import generate_audio_narration_file_th
 from src.v2_thai.generate_script_th import generate_thai_script_data, translate_thai_content_to_eng
 from src.v2_thai.generate_subtitle_clip import generate_subtitle_clips, create_debug_subtitle_clip
-from src.v2_thai.transcription_mfa_alignment_mini_pipeline import run_mfa_pipeline
+from src.v2_thai.mfa_transcript_alignment_mini_pipeline import run_mfa_pipeline
 
 ## Define Directories and files
 
@@ -34,7 +39,7 @@ def main():
     # Use "random viral story" to let Gemini be creative
     original_script_content_data_json = asyncio.run(
         generate_thai_script_data(
-            topic=  "guy discovers my sister working in a brothel",
+            topic=  "found my dad in a gay bar",
             time_length="15-20",   # TODO: don't forget to change this
             output_folder_path=TEMP_PROCESSING_DIR
         )
@@ -62,19 +67,12 @@ def main():
 
     """ ========== 3. Generate transcript with timestamps for dynamic video subtitles via MFA"""
 
-    if os.path.exists(narration_audio_file):
-        try:
-            aligned_transcript_word_and_time_data = run_mfa_pipeline(
-                raw_script_text_from_json=original_script_content_data_json.get('script_thai'),
-                audio_file_path=narration_audio_file,
-                output_dir=TEMP_PROCESSING_DIR
-            )
+    aligned_transcript_word_and_time_data = run_mfa_pipeline(
+        raw_script_text_from_json=original_script_content_data_json.get('script_thai'),
+        audio_file_path=narration_audio_file,
+        output_dir=TEMP_PROCESSING_DIR
+    )
 
-        except Exception as e:
-            print(f"❌ Alignment Failed: {e}")
-            raise e
-    else:
-        raise Exception("!!! Raw audio file couldn't be found")
 
     # TODO: the without_unkfix one is better, i just need to replace the unk with ... in a post processing function
     # i plan to archive both and make a new file with 'unkfix' and modify it to just replace unk with `...`
@@ -103,6 +101,7 @@ def main():
         logger=None
     )
     print(">>> ✅ finished combing subtitle clip with audio narration :D")
+
 
 
 

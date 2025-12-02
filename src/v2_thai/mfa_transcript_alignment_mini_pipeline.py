@@ -1,3 +1,4 @@
+import copy
 import json
 import os
 import shutil
@@ -180,86 +181,6 @@ def _execute_mfa_subprocess(input_dir, output_dir):
         raise e
 
 
-def _repair_unknown_tokens_with_difflib(tokenized_original_script_text, raw_mfa_data_json):
-    """
-    Replaces <unk> tokens in the MFA output by aligning them with the
-    original tokenized script using SequenceMatcher.
-    """
-
-    # 1. Get the "Ground Truth" tokens using the EXACT same logic sent to MFA
-    # We must ensure we are comparing apples to apples.
-    expected_tokens = tokenized_original_script_text.split() # List['แก', 'รร', 'ร', 'เรื่อง'...]
-
-    # 2. Extract the "Noisy" tokens from MFA output including <unk>
-    mfa_tokens = [item['word'] for item in raw_mfa_data_json]
-
-    # 3. Create the Sequence Matcher
-    # We want to transform mfa_tokens INTO expected_tokens where there are errors
-    matcher = difflib.SequenceMatcher(None, expected_tokens, mfa_tokens)
-
-    repaired_data = []
-
-    # 4. Iterate through the "Opcodes" (instructions to match the lists)
-    # tag: 'equal', 'replace', 'delete', 'insert'
-    # i1, i2: indices for expected_tokens (Source Script)
-    # j1, j2: indices for mfa_tokens (MFA Output)
-    for tag, i1, i2, j1, j2 in matcher.get_opcodes():
-
-        if tag == 'equal':
-            # The words match perfectly. Keep the MFA data (it has the timestamps).
-            repaired_data.extend(raw_mfa_data_json[j1:j2])
-
-        elif tag == 'replace':
-            # This is where <unk> usually happens.
-            # Example: expected='เสียงสั่นๆ', mfa='<unk>'
-
-            mfa_chunk = raw_mfa_data_json[j1:j2]
-            script_chunk = expected_tokens[i1:i2]
-
-            # If we have MFA timing data available for this chunk
-            if len(mfa_chunk) > 0:
-                start_time = mfa_chunk[0]['start']
-                end_time = mfa_chunk[-1]['end']
-
-                # Case A: 1-to-1 replacement (Most common)
-                # MFA: [<unk>] -> Script: ["เสียงสั่นๆ"]
-                if len(mfa_chunk) == len(script_chunk):
-                    for k, word in enumerate(script_chunk):
-                        repaired_data.append({
-                            "word": word,
-                            "start": mfa_chunk[k]['start'],
-                            "end": mfa_chunk[k]['end']
-                        })
-
-                # Case B: N-to-M replacement (Mismatched counts)
-                # We distribute the total duration of the MFA chunk across the script words
-                else:
-                    total_duration = end_time - start_time
-                    word_duration = total_duration / len(script_chunk)
-
-                    current_start = start_time
-                    for word in script_chunk:
-                        repaired_data.append({
-                            "word": word,
-                            "start": round(current_start, 3),
-                            "end": round(current_start + word_duration, 3)
-                        })
-                        current_start += word_duration
-
-        elif tag == 'insert':
-            # MFA has words that aren't in the script? (Rare, usually hallucination or noise)
-            # We generally ignore these or keep them if they aren't <unk>
-            pass
-
-        elif tag == 'delete':
-            # The Script has words, but MFA missed them entirely (skipped over).
-            # We can't recover timestamps easily here without interpolation.
-            # For now, we skip to avoid breaking the timeline.
-            pass
-
-    return repaired_data
-
-
 def _parse_mfa_results(mfa_output_dir):
     """
     Reads the resulting .TextGrid file from the mfa execution and converts it
@@ -288,6 +209,19 @@ def _parse_mfa_results(mfa_output_dir):
         })
 
     return parsed_transcript_timestamp_data
+
+
+def _repair_unknown_tokens(raw_extracted_mfa_data_json: list[dict]):
+    """
+    Replaces <unk> tokens in the MFA output with just a blank string for now
+    """
+    # deep copy since i want the unmodified data to preserve
+    repaired_mfa_data_json = copy.deepcopy(raw_extracted_mfa_data_json)
+    for segment in repaired_mfa_data_json:
+        if segment.get("word") == "<unk>":
+            segment["word"] = ""
+
+    return repaired_mfa_data_json
 
 
 # ==========================================
@@ -331,12 +265,8 @@ def run_mfa_pipeline(
     # 5. Parse Results to json
     raw_aligned_transcript_data_json = _parse_mfa_results(mfa_output_dir=mfa_output_dir)
 
-    # 6. Repair transcript: Fix <unk> tokens using difflib # TODO remove this and repair with just ... or blank
-    # repaired_aligned_transcript_data = _repair_unknown_tokens_with_difflib(
-    #     tokenized_original_script_text=tokenized_clean_script_text,
-    #     raw_mfa_data_json=raw_aligned_transcript_data_json,
-    # )
-    repaired_aligned_transcript_data = raw_aligned_transcript_data_json # replacement
+    # 6. Repair transcript: Fix <unk> tokens (currently just replacing with empty string)
+    repaired_aligned_transcript_data = _repair_unknown_tokens(raw_aligned_transcript_data_json)
 
 
     # 7. Save json data as a file for inspection
@@ -345,7 +275,7 @@ def run_mfa_pipeline(
         json_file_name_path=os.path.join(output_dir, "mfa_aligned_transcript_data.json")
     )
 
-    print(f"✅ Transcription and Timestamp Alignment Complete: {len(aligned_transcript_word_and_time_data)} words aligned.\n")
+    print(f"✅ Transcription and Timestamp Alignment Complete: {len(repaired_aligned_transcript_data)} words aligned.\n")
 
     return repaired_aligned_transcript_data
 
