@@ -222,23 +222,6 @@ async def generate_audio_narration_file_th(
         return
 
 
-
-
-
-# decided to speed up both the audio and video with subtitles later in the pipeline to make it easier for whisper
-    # # Post-Processing (Speed up + High Quality Convert)
-    # if raw_audio_output_file and os.path.exists(raw_audio_output_file):
-    #     # Apply 20% speed boost (1.2x)
-    #     sped_up_audio_file = await speed_up_audio_with_ffmpeg(raw_audio_output_file, speed=1.25)
-    #
-    #     print(f"   ✅ Sped-up Audio saved to: {sped_up_audio_file}\n")
-    #     return sped_up_audio_file
-    #
-    # print("   ❌ Audio generation completely failed.")
-    # return None
-
-
-
 # ================ Execution
 
 if __name__ == "__main__":

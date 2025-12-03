@@ -3,6 +3,8 @@ import os
 import random
 
 import PIL.Image
+from moviepy.video.fx.speedx import speedx
+
 # FIX: Register ANTIALIAS as LANCZOS for Pillow 10.x compatibility
 if not hasattr(PIL.Image, 'ANTIALIAS'):
     PIL.Image.ANTIALIAS = PIL.Image.LANCZOS
@@ -17,6 +19,41 @@ from src.v2_thai.generate_subtitle_clip import generate_subtitle_clips_data
 # ==========================================
 #        PRIVATE SUB-FUNCTIONS
 # ==========================================
+
+def _create_sped_up_audio_file(original_audio_input_path, output_dir, speed_factor):
+    """
+    Uses FFmpeg 'atempo' to create a high-quality sped-up audio file.
+    Returns the duration of the new file for precise syncing, and file path
+    Returns: (output_file_path, new_duration)
+    """
+    print(f"   🔊 Generating sped-up audio ({speed_factor}x)...")
+
+    # extracting extension from the original audio (.mp3, .wav)
+    _, audio_extension = os.path.splitext(original_audio_input_path)
+
+    # Calculate filter string. 'atempo' only accepts 0.5 to 2.0.
+    # If speed > 2.0, we would need to chain them, but for 1.3 it's fine.
+    sped_up_audio_file_path = os.path.join(
+        output_dir, f"sped up {speed_factor} audio{audio_extension}"
+    )
+
+
+    try:
+        stream = ffmpeg.input(original_audio_input_path)
+        stream = ffmpeg.filter(stream, 'atempo', speed_factor)
+
+        # Note: 'b:a': '192k' sets bitrate. If using WAV, FFmpeg usually ignores this and defaults to PCM (lossless)
+        out = ffmpeg.output(stream, sped_up_audio_file_path, **{'b:a': '192k'})
+        ffmpeg.run(out, overwrite_output=True, quiet=True)
+
+        # Get exact duration of new file for precision sync
+        probe = ffmpeg.probe(sped_up_audio_file_path)
+        new_duration = float(probe['format']['duration'])
+        return sped_up_audio_file_path, new_duration
+
+    except ffmpeg.Error as e:
+        print(f"   ❌ Audio Speedup Failed: {e.stderr.decode('utf8')}")
+        raise e
 
 def _scan_media_folder(folder_path, minimum_time_s: float=90, allowed_exts=('.webm', '.mp4', '.mkv')):
     """
@@ -117,10 +154,11 @@ def _prepare_background_clip(video_info, target_duration, target_resolution=(108
 #        PUBLIC ORCHESTRATOR
 # ==========================================
 
-def assemble_final_video_with_bg_subtitle_audio(
+def run_composite_final_video_pipeline(
         media_folder,
         audio_file_path,
         subtitle_clips,
+        temp_processing_dir,
         output_dir,
         final_speed_factor=1.3
 ):
@@ -130,47 +168,78 @@ def assemble_final_video_with_bg_subtitle_audio(
     print("\n4. 🏗️ Assembling Final Video...")
 
     # Get Audio Duration to get time length for bg video
-    audio_clip = AudioFileClip(audio_file_path)
-    content_duration: float = audio_clip.duration
+    audio_clip = AudioFileClip(audio_file_path)  # moviepy object
+    original_audio_duration: float = audio_clip.duration
 
-    # Select bg video & Prepare background clip
+    # Speed up audio only if the speed factor is not 1
+    if final_speed_factor != 1.0:
+        sped_up_audio_clip_path, sped_up_audio_duration = _create_sped_up_audio_file(
+            original_audio_input_path=audio_file_path, # this is different from `audio_clip` because this func wants path not obj
+            output_dir=temp_processing_dir,
+            speed_factor=final_speed_factor
+        )
+        sped_up_audio_clip = AudioFileClip(sped_up_audio_clip_path) # load sped up audio into memory as moviepy object
+        # Calculate the REAL speed factor.
+        # 1.3 might result in 1.29999 or 1.30001 due to audio sampling. We force the video to match the audio exactly.
+        sync_speed_factor = original_audio_duration / sped_up_audio_duration
+        # print(f"      Precision Sync Factor: {sync_speed_factor:.5f} (Target speed up times: {final_speed_factor})")
+
+    else:
+        sped_up_audio_clip = AudioFileClip(audio_file_path)
+        sped_up_audio_duration = original_audio_duration
+        sync_speed_factor = 1.0
+
+
+
+    # Select bg video & Prepare background clip (1x normal speed at first)
     available_videos = _scan_media_folder(
         folder_path=media_folder,
-        minimum_time_s=content_duration
+        minimum_time_s=original_audio_duration
     )
     selected_video_info = _select_weighted_random_video(available_videos)
 
     background_clip = _prepare_background_clip(
         video_info=selected_video_info,
-        target_duration=content_duration
+        target_duration=original_audio_duration
     )
 
     # Mute Background Video & Attach Narration
-    # We set audio to None first to remove game sounds, then set new audio
+    # we set audio to None first to remove game sounds,
     background_clip = background_clip.without_audio()
-    background_clip = background_clip.set_audio(audio_clip)
 
-    # Composite (Overlay Subtitles)
-    # Background is at bottom, subs on top
-    final_composite = CompositeVideoClip([background_clip] + subtitle_clips)
+    # Composite BG and Subtitles
+    # background is at bottom, subs on top
+    bg_and_subtitles_clip_normal_speed = CompositeVideoClip([background_clip] + subtitle_clips)
 
-    # Render Initial Version (Normal Speed)
-    temp_normal_speed_video_path = os.path.join(output_dir, "temp_render_normal_speed.mp4")
+
+    # Speed up the video clip
+    if sync_speed_factor != 1.0:
+        # speedx is smart: it speeds up the BG and the Subtitle appearances
+        final_composite = bg_and_subtitles_clip_normal_speed.fx(speedx, factor=sync_speed_factor)
+    else:
+        final_composite = bg_and_subtitles_clip_normal_speed
+
+
+    # Merge video & audio and render
+    # trim any tiny floating point excesses to match audio exactly
+    final_composite = final_composite.set_duration(sped_up_audio_duration)
+    final_composite = final_composite.set_audio(sped_up_audio_clip)  # set audio
+
     print("   💾 Rendering composite video (bg gameplay + subtitles + audio)...")
 
+    final_output_video_file_name = os.path.join(output_dir, "FINAL_UPLOAD_READY.mp4")
+
     final_composite.write_videofile(
-        temp_normal_speed_video_path,
+        output_path=final_output_video_file_name,
         fps=30,
         codec='libx264',
         audio_codec='aac',
         threads=4,
-        logger=None # Hide massive progress bar logs if desired, or use 'bar'
+        logger='bar'
     )
 
-
-
-    print(f"\n🎉 VIDEO GENERATION COMPLETE: {temp_normal_speed_video_path}")
-    return temp_normal_speed_video_path
+    print(f"\n🎉 VIDEO GENERATION COMPLETE: {final_output_video_file_name}")
+    return final_output_video_file_name
 
 
 
@@ -188,8 +257,8 @@ if __name__ == "__main__":
 
     debug_audio_file = "correct_test_files/raw_original_audio.wav"
 
-    output_path = "___debug_composite_final_video"
-    os.makedirs(output_path, exist_ok=True) # create the folder
+    temp_processing_dir = "___debug_composite_final_video"
+    os.makedirs(temp_processing_dir, exist_ok=True) # create the folder
 
 
     # load word data json file to generate transcript data
@@ -200,11 +269,12 @@ if __name__ == "__main__":
         word_data_dict=aligned_word_data
     )
 
-    final_video_path = assemble_final_video_with_bg_subtitle_audio(
+    final_video_path = run_composite_final_video_pipeline(
         media_folder=MEDIA_RESOURCES_DIR,
         audio_file_path=debug_audio_file,
         subtitle_clips=list_of_debug_moviepyTextClips,
-        output_dir=output_path,
+        temp_processing_dir=temp_processing_dir,
+        output_dir=temp_processing_dir,  # this is fine since this is testing
         final_speed_factor=1.3
     )
 
