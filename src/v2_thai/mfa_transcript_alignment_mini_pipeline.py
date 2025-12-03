@@ -240,7 +240,7 @@ def run_mfa_pipeline(
     Orchestrator function for the MFA alignment pipeline.
     """
 
-    print("3. 📝Generating Transcript with word and timestamps for subtitles...")
+    print("3. 📝 Generating Transcript with word and timestamps for subtitles...")
 
     # Setup Environment
     mfa_input_dir, mfa_output_dir = _setup_mfa_directories(output_dir=output_dir)

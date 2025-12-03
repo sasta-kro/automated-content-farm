@@ -19,3 +19,6 @@ venv/
 
 # testing stuff
 /test_pile
+
+# resources
+/media_resources/

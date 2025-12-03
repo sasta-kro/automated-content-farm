@@ -9,9 +9,7 @@ from moviepy.video.io.ffmpeg_tools import ffmpeg_merge_video_audio
 def generate_subtitle_clips_data(
         word_data_dict,
         videosize=(1080, 1920),
-        # font="/Users/saiaikeshwetunaung/Library/Fonts/Chonburi-Regular.ttf", # OR
-        font= "/Users/saiaikeshwetunaung/Library/Fonts/Prompt-Bold.ttf",
-        # Ansananew
+        font= "/Users/saiaikeshwetunaung/Documents/PythonProjects/Automated_content_farm/media_resources/thai_fonts/NotoSansThaiLooped-Semibold.ttf",
 
         fontsize=120,        # Thai needs slightly smaller font than Eng usually
         color='yellow',     # Yellow is standard for Thai TikTok
@@ -62,7 +60,7 @@ def generate_subtitle_clips_data(
 
     return TextClips_list
 
-def create_debug_subtitle_clip(TextClips_list, output_dir=""):
+def _create_debug_subtitle_clip(TextClips_list, output_dir=""):
     """
     Creates a white video with subtitles to test font rendering.
     """
@@ -89,32 +87,31 @@ def create_debug_subtitle_clip(TextClips_list, output_dir=""):
 
 
 if __name__ == "__main__":
-    with open("correct_test_files/mfa_aligned_transcript_data_with_unk.json") as f:
+    with open("correct_test_files/mfa_aligned_transcript_data.json") as f:
         test_word_timestamp_data = json.load(f)
 
     debug_directory = "___debug_generated_subtitle_clips"
-    #
-    # # generate text clips
-    # text_clips = generate_subtitle_clips_data(
-    #     word_data_dict=test_word_timestamp_data,
-    #     output_directory=debug_directory,
-    # )
-    #
-    # # create debug video
-    # create_debug_subtitle_clip(
-    #     TextClips_list=text_clips,
-    #     output_dir=debug_directory
-    # )
-    #
-    #
+
+    # generate text clips
+    text_clips = generate_subtitle_clips_data(
+        word_data_dict=test_word_timestamp_data,
+    )
+
+    # create debug video
+    _create_debug_subtitle_clip(
+        TextClips_list=text_clips,
+        output_dir=debug_directory
+    )
+
+
     # # temp comment out to merge audio and video
     # ffmpeg_merge_video_audio(
     #     video=os.path.join(debug_directory, "debug_test_subtitle_clip.mp4"),
-    #     audio="correct_test_files/raw_original_audio_F_Gem.wav",
+    #     audio="correct_test_files/raw_original_audio.wav",
     #     output=os.path.join(debug_directory, "debug_test_subtitles_vid_with_sound.mp4"),
     #     vcodec='copy', # 'copy' means don't re-render video (Fast!)
     #     acodec='aac', # audio codec
     #     ffmpeg_output=False, # Hides logs
     #     logger=None
     # )
-    # print(f"✅ Debug subtitle vid with sound ")
+    print(f"✅ Debug subtitle vid with sound ")

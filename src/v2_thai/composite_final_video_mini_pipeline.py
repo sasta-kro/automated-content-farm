@@ -1,3 +1,4 @@
+import datetime
 import json
 import os
 import random
@@ -174,6 +175,93 @@ def _prepare_final_audio_and_sync_factor(original_audio_path, output_dir, target
     return AudioFileClip(sped_up_audio_path), sync_factor
 
 
+def _generate_organic_metadata_params():
+    """
+    Generates FFmpeg flags to make the video file appear to have been
+    created by a human editor at a specific location in Thailand (AU),
+    using various software, sometime in the last 10 days.
+    """
+    params = []
+
+    # CLEANING: Strip original metadata
+    # This removes the 'original' camera data from the source clips
+    params.extend(["-map_metadata", "-1"])
+
+    # LOCATION: Assumption University (Suvarnabhumi Campus) + Random Jitter
+    # Center coords: 13.6121° N, 100.8369° E
+    # 1km is roughly 0.009 degrees lat/lon in Thailand
+    base_lat = 13.6121
+    base_lon = 100.8369
+
+    # Random offset between -1km and +1km
+    lat_offset = random.uniform(-0.009, 0.009)
+    lon_offset = random.uniform(-0.009, 0.009)
+
+    final_lat = base_lat + lat_offset
+    final_lon = base_lon + lon_offset
+
+    # Format as ISO 6709: +13.6121+100.8369/
+    location_string = f"{final_lat:+.4f}{final_lon:+.4f}/"
+    params.extend(["-metadata", f"location={location_string}"])
+
+    if random.random() > 0.5:
+        params.extend(["-metadata", "location-eng=Bangkok, Thailand"])
+    else:
+        params.extend(["-metadata", "location-eng=Bang Sao Thong, Samut Prakan"])
+
+
+    # TIME: Random creation time (Now minus 0 to 240 hours)
+    seconds_back = random.randint(0, 240 * 3600)
+    fake_creation_dt = datetime.datetime.now() - datetime.timedelta(seconds=seconds_back)
+    fake_creation_str = fake_creation_dt.strftime("%Y-%m-%d %H:%M:%S")
+
+    params.extend(["-metadata", f"creation_time={fake_creation_str}"])
+
+    # SOFTWARE SPOOFING: Hide the fact that this is Python/FFmpeg
+    # We rotate through common "Human" video editors so not every file looks identical.
+    human_editors = [
+        "Adobe Premiere Pro 2023.0 (Windows)",
+        "DaVinci Resolve Studio 18.5",
+        "CapCut for Windows 2.5.0",
+        "Final Cut Pro 10.6.5",
+        "Sony Vegas Pro 20.0",
+
+        # Mobile (Android/iOS style signatures)
+        "CapCut 9.6.0 (Android)",
+        "InShot Pro 1.952.1415 (Android)",
+        "KineMaster 7.2.5.30855.GP",
+        "VN Video Editor 2.1.5 (iOS)",
+        "Splice - Video Editor & Maker 5.1 (iOS)"
+    ]
+    fake_software = random.choice(human_editors)
+
+    # Note: 'encoder' tag often persists as Lavf in stream info, but 'tool'
+    # or 'software' tags in the container can be overwritten.
+    params.extend(["-metadata", f"encoder={fake_software}"])
+    params.extend(["-metadata", f"software={fake_software}"])
+    params.extend(["-metadata", f"comment=Rendered at {fake_creation_str}"])
+
+
+    # Project Name metadata (names usually look like "Final", "Edit 2", "Project 4", etc.)
+    project_names = ["Final Cut", "Vlog_Export", "Project 1", "My Video", "Edit_v2", "Render 1"]
+    fake_title = random.choice(project_names)
+    params.extend(["-metadata", f"title={fake_title}"])
+
+    # If it's a mobile editor, often 'make' and 'model' tags persist from the phone
+    if "Android" in fake_software or "iOS" in fake_software:
+        phones = [("Apple", "iPhone 14 Pro"), ("Samsung", "Galaxy S23 Ultra"), ("Google", "Pixel 7")]
+        make, model = random.choice(phones)
+        params.extend(["-metadata", f"make={make}"])
+        params.extend(["-metadata", f"model={model}"])
+
+    # STRUCTURE: Web Optimization
+    # This moves the MOOV atom to the front (faststart).
+    # Almost all 'human' export settings check this box for web compatibility.
+    params.extend(["-movflags", "+faststart"])
+
+    return params
+
+
 
 # ==========================================
 #        PUBLIC ORCHESTRATOR
@@ -190,7 +278,7 @@ def run_composite_final_video_pipeline(
     """
     Orchestrator to build the final vertical video.
     """
-    print("\n4. 🏗️ Assembling Final Video...")
+    print("\n5. 🏗️ Assembling Final Video...")
 
     # Get audio duration (needed for BG video selection)
     # using a context manager or close immediately to free the file handle (idk what this means)
@@ -239,7 +327,14 @@ def run_composite_final_video_pipeline(
 
     print("   💾 Rendering composite video (bg gameplay + subtitles + audio)...")
 
-    final_output_video_file_name = os.path.join(output_dir, "FINAL_UPLOAD_READY.mp4")
+
+    # Generate timestamp: YearMonthDay_HourMinuteSecond (e.g., 20231203_193045) to put at the end of a file name
+    timestamp_for_video = datetime.datetime.now().strftime("%Y%m%d_%H%M%S")  # first datetime is module name, 2nd datetime is class name
+    final_output_video_file_name = os.path.join(output_dir, f"FINAL_UPLOAD_READY_{timestamp_for_video}.mp4")
+
+    ffmpeg_organic_params = _generate_organic_metadata_params()
+    print(f"      🎭 Spoofing identity by editing metadata: {ffmpeg_organic_params[ffmpeg_organic_params.index('encoder=')+1]}")
+
 
     final_composite_video.write_videofile(
         filename=final_output_video_file_name,
@@ -247,7 +342,8 @@ def run_composite_final_video_pipeline(
         codec='libx264',
         audio_codec='aac',
         threads=4,
-        logger='bar'
+        logger='bar',
+        ffmpeg_params=ffmpeg_organic_params
     )
 
     print(f"\n🎉 VIDEO GENERATION COMPLETE: {final_output_video_file_name}")
