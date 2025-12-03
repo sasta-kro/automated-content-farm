@@ -11,7 +11,7 @@ from moviepy.video.io.ffmpeg_tools import ffmpeg_merge_video_audio
 
 from src.v2_thai.generate_audio_th_from_script import generate_audio_narration_file_th
 from src.v2_thai.generate_script_th import generate_thai_script_data, translate_thai_content_to_eng
-from src.v2_thai.generate_subtitle_clip import generate_subtitle_clips, create_debug_subtitle_clip
+from src.v2_thai.generate_subtitle_clip import generate_subtitle_clips_data, create_debug_subtitle_clip
 from src.v2_thai.mfa_transcript_alignment_mini_pipeline import run_mfa_pipeline
 
 ## Define Directories and files
@@ -74,14 +74,9 @@ def main():
     )
 
 
-    # TODO: the without_unkfix one is better, i just need to replace the unk with ... in a post processing function
-    # i plan to archive both and make a new file with 'unkfix' and modify it to just replace unk with `...`
-
-
     """ =========== 4. Generate subtitle clips"""
-    list_of_moviepyTextClips = generate_subtitle_clips(
-        word_data=aligned_transcript_word_and_time_data,
-        output_directory=TEMP_PROCESSING_DIR,
+    list_of_moviepyTextClips = generate_subtitle_clips_data(
+        word_data_dict=aligned_transcript_word_and_time_data,
     )
 
     # temp to test out the subtitle clip
@@ -109,4 +104,4 @@ def main():
 # ======== EXECUTION =====
 if __name__ == "__main__":
     main()
-
+    # TODO: change font, fix sped-up error

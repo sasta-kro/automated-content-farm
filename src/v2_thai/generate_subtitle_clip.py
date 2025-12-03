@@ -6,8 +6,8 @@ from moviepy.editor import TextClip, CompositeVideoClip, ColorClip, VideoFileCli
 from moviepy.video.io.ffmpeg_tools import ffmpeg_merge_video_audio
 
 
-def generate_subtitle_clips(
-        word_data,
+def generate_subtitle_clips_data(
+        word_data_dict,
         videosize=(1080, 1920),
         # font="/Users/saiaikeshwetunaung/Library/Fonts/Chonburi-Regular.ttf", # OR
         font= "/Users/saiaikeshwetunaung/Library/Fonts/Prompt-Bold.ttf",
@@ -17,16 +17,15 @@ def generate_subtitle_clips(
         color='yellow',     # Yellow is standard for Thai TikTok
         stroke_width=4,
         stroke_color='black',
-        output_directory=""
 ):
     """
     Generates a list of TextClips based on word timings.
     """
-    print(f"4. 🎬 Generating {len(word_data)} subtitle clips...")
+    print(f"4. 🎬 Generating {len(word_data_dict)} subtitle clips...")
 
     TextClips_list = []
     # Iterate through words
-    for item in word_data:
+    for item in word_data_dict:
         word_text = item['word']
         start_time = item['start']
         end_time = item['end']
@@ -94,28 +93,28 @@ if __name__ == "__main__":
         test_word_timestamp_data = json.load(f)
 
     debug_directory = "___debug_generated_subtitle_clips"
-
-    # generate text clips
-    text_clips = generate_subtitle_clips(
-        word_data=test_word_timestamp_data,
-        output_directory=debug_directory,
-    )
-
-    # create debug video
-    create_debug_subtitle_clip(
-        TextClips_list=text_clips,
-        output_dir=debug_directory
-    )
-
-
-    # temp comment out to merge audio and video
-    ffmpeg_merge_video_audio(
-        video=os.path.join(debug_directory, "debug_test_subtitle_clip.mp4"),
-        audio="correct_test_files/raw_original_audio_F_Gem.wav",
-        output=os.path.join(debug_directory, "debug_test_subtitles_vid_with_sound.mp4"),
-        vcodec='copy', # 'copy' means don't re-render video (Fast!)
-        acodec='aac', # audio codec
-        ffmpeg_output=False, # Hides logs
-        logger=None
-    )
-    print(f"✅ Debug subtitle vid with sound ")
+    #
+    # # generate text clips
+    # text_clips = generate_subtitle_clips_data(
+    #     word_data_dict=test_word_timestamp_data,
+    #     output_directory=debug_directory,
+    # )
+    #
+    # # create debug video
+    # create_debug_subtitle_clip(
+    #     TextClips_list=text_clips,
+    #     output_dir=debug_directory
+    # )
+    #
+    #
+    # # temp comment out to merge audio and video
+    # ffmpeg_merge_video_audio(
+    #     video=os.path.join(debug_directory, "debug_test_subtitle_clip.mp4"),
+    #     audio="correct_test_files/raw_original_audio_F_Gem.wav",
+    #     output=os.path.join(debug_directory, "debug_test_subtitles_vid_with_sound.mp4"),
+    #     vcodec='copy', # 'copy' means don't re-render video (Fast!)
+    #     acodec='aac', # audio codec
+    #     ffmpeg_output=False, # Hides logs
+    #     logger=None
+    # )
+    # print(f"✅ Debug subtitle vid with sound ")
