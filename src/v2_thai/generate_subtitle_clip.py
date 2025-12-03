@@ -2,14 +2,68 @@ import asyncio
 import json
 import os
 import numpy as np
+from PIL import ImageFont, Image, ImageDraw
 from moviepy.editor import TextClip, CompositeVideoClip, ColorClip, VideoFileClip
+from moviepy.video.VideoClip import ImageClip
 from moviepy.video.io.ffmpeg_tools import ffmpeg_merge_video_audio
+
+def _create_pil_text_clip(text, font_path, fontsize, color, stroke_color, stroke_width):
+    """
+    Generates a MoviePy ImageClip using Pillow for better font rendering (Thai support).
+    """
+    # Load the font
+    try:
+        font = ImageFont.truetype(font_path, fontsize)
+    except OSError:
+        raise Exception(f"Could not load font at: {font_path}")
+
+    # Calculate text size (using getbbox for accuracy with strokes)
+    # Create a dummy image to calculate size
+    dummy_img = Image.new('RGBA', (1, 1))
+    draw = ImageDraw.Draw(dummy_img)
+
+    # getbbox returns (left, top, right, bottom)
+    left, top, right, bottom = draw.textbbox((0, 0), text, font=font, stroke_width=stroke_width)
+    text_width = right - left
+    text_height = bottom - top
+
+    # Add a little padding to prevent cutting off edges
+    width = text_width + 20
+    height = text_height + 20
+
+    # Create the actual image with transparent background
+    img = Image.new('RGBA', (width, height), (255, 255, 255, 0))
+    draw = ImageDraw.Draw(img)
+
+    # Draw text (Center it in the image)
+    # We offset by -left and -top to align the bounding box to 0,0 + padding
+    x_pos = 10 - left
+    y_pos = 10 - top
+
+    draw.text(
+        (x_pos, y_pos),
+        text,
+        font=font,
+        fill=color,
+        stroke_width=stroke_width,
+        stroke_fill=stroke_color
+    )
+
+    # Convert to numpy array for MoviePy
+    img_np = np.array(img)
+
+    # Create ImageClip
+    # We set the duration later in the main loop
+    clip = ImageClip(img_np)
+
+    return clip
+
 
 
 def generate_subtitle_clips_data(
         word_data_dict,
         videosize=(1080, 1920),
-        font= "/Users/saiaikeshwetunaung/Documents/PythonProjects/Automated_content_farm/media_resources/thai_fonts/NotoSansThaiLooped-Semibold.ttf",
+        font= "/Users/saiaikeshwetunaung/Documents/PythonProjects/Automated_content_farm/media_resources/thai_fonts/Mitr-Bold.ttf",
 
         fontsize=120,        # Thai needs slightly smaller font than Eng usually
         color='yellow',     # Yellow is standard for Thai TikTok
@@ -36,14 +90,13 @@ def generate_subtitle_clips_data(
 
         # Create the clip
         try:
-            txt_clip = TextClip(
-                word_text,
+            txt_clip = _create_pil_text_clip(
+                text=word_text,
+                font_path=font,
                 fontsize=fontsize,
                 color=color,
-                font=font,
                 stroke_color=stroke_color,
-                stroke_width=stroke_width,
-                method='label' # 'label' is faster/cleaner for short text than 'caption'
+                stroke_width=stroke_width
             )
 
         except Exception as e:
@@ -69,7 +122,6 @@ def _create_debug_subtitle_clip(TextClips_list, output_dir=""):
     # Background (white)
     # Duration = 60 seconds placeholder
     bg_clip = ColorClip(size=(W, H), color=(255,255,255), duration=60.0)
-
 
     # Composite
     final_output = CompositeVideoClip([bg_clip] + TextClips_list)
