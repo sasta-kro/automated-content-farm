@@ -111,37 +111,7 @@ def _prepare_background_clip(video_info, target_duration, target_resolution=(108
 
     return clip_final
 
-def _apply_final_speedup(input_file, output_file, speed_factor=1.3):
-    """
-    Uses FFmpeg to speed up the rendered video + audio.
-    atempo = Audio Tempo (Pitch preserved)
-    setpts = Video Presentation Time Stamps (1/speed)
-    """
-    print(f"   ⏩ Applying final speed boost ({speed_factor}x)...")
 
-    try:
-        stream = ffmpeg.input(input_file)
-
-        # Split into video and audio streams
-        v = stream.video
-        a = stream.audio
-
-        # Apply filters
-        # PTS (Presentation TimeStamp) must be INVERTED for video (0.5 means 2x speed)
-        v = ffmpeg.filter(v, 'setpts', f'{1/speed_factor}*PTS')
-        # atempo is linear (2.0 means 2x speed)
-        a = ffmpeg.filter(a, 'atempo', speed_factor)
-
-        # Output
-        output = ffmpeg.output(v, a, output_file, **{'b:v': '5M', 'b:a': '192k'})
-        ffmpeg.run(output, overwrite_output=True, quiet=True)
-
-        print("     Final speed-up complete.")
-        return output_file
-
-    except ffmpeg.Error as e:
-        print(f"   ❌ FFmpeg Speedup Failed: {e.stderr.decode('utf8')}")
-        return input_file # Return original if failed
 
 # ==========================================
 #        PUBLIC ORCHESTRATOR
@@ -197,21 +167,10 @@ def assemble_final_video_with_bg_subtitle_audio(
         logger=None # Hide massive progress bar logs if desired, or use 'bar'
     )
 
-    # Apply Final Speed Up (1.3x)
-    final_output_path = os.path.join(output_dir, "FINAL_UPLOAD_READY.mp4")
 
-    if final_speed_factor != 1.0:
-        _apply_final_speedup(
-            input_file=temp_normal_speed_video_path,
-            output_file=final_output_path,
-            speed_factor=final_speed_factor)
 
-    else:
-        # If no speed up, just rename
-        os.rename(temp_normal_speed_video_path, final_output_path)
-
-    print(f"\n🎉 VIDEO GENERATION COMPLETE: {final_output_path}")
-    return final_output_path
+    print(f"\n🎉 VIDEO GENERATION COMPLETE: {temp_normal_speed_video_path}")
+    return temp_normal_speed_video_path
 
 
 
