@@ -6,6 +6,8 @@ import random
 import PIL.Image
 from moviepy.video.fx.speedx import speedx
 
+from src.v2_thai.Util_functions import display_print_ffmpeg_metadata_parameters
+
 # FIX: Register ANTIALIAS as LANCZOS for Pillow 10.x compatibility
 if not hasattr(PIL.Image, 'ANTIALIAS'):
     PIL.Image.ANTIALIAS = PIL.Image.LANCZOS
@@ -332,9 +334,9 @@ def run_composite_final_video_pipeline(
     timestamp_for_video = datetime.datetime.now().strftime("%Y%m%d_%H%M%S")  # first datetime is module name, 2nd datetime is class name
     final_output_video_file_name = os.path.join(output_dir, f"FINAL_UPLOAD_READY_{timestamp_for_video}.mp4")
 
-    ffmpeg_organic_params = _generate_organic_metadata_params()
-    print(f"      🎭 Spoofing identity by editing metadata: {ffmpeg_organic_params[ffmpeg_organic_params.index('encoder=')+1]}")
 
+    ffmpeg_organic_params = _generate_organic_metadata_params()
+    display_print_ffmpeg_metadata_parameters(ffmpeg_organic_params)  # for the pretty prints
 
     final_composite_video.write_videofile(
         filename=final_output_video_file_name,

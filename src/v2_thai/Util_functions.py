@@ -28,3 +28,25 @@ def save_json_file(dict_or_json_data, json_file_name_path: str):
         raise ValueError(f"Couldn't save JSON. Data is empty or None. Target: {json_file_name_path}")
 
 
+def display_print_ffmpeg_metadata_parameters(ffmpeg_params):
+    print("      🎭 Spoofing Identity & Metadata:")
+
+    # We want to find strings that start with ANY of these prefixes
+    targets = ("encoder=", "location-eng=", "creation_time=")
+
+    found_any = False
+
+    for param in ffmpeg_params:
+        # Check if this specific string starts with one of our targets
+        if param.startswith(targets):
+            # Clean up the output by removing the 'key=' part for a nicer display
+            # e.g., "encoder=CapCut" -> "CapCut"
+            key, value = param.split('=', 1)
+            print(f"         - {key}: {value}")
+            found_any = True
+
+    print(f"         - and more ...")
+
+
+    if not found_any:
+        print("         (No spoofed metadata found in parameters)")

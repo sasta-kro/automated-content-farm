@@ -48,8 +48,8 @@ def main():
     # Use "random viral story" to let Gemini be creative
     original_script_content_data_json = asyncio.run(
         generate_thai_script_data(
-            topic=  "found my dad in a gay bar",
-            time_length="15-20",   # TODO: don't forget to change this
+            topic=  "my head started getting dizzy and i felt ill, it got worse so i visited the hospital, turns out it was hydrogen monoxide poisoning by my boyfriend's farts",
+            time_length="25-35",   # TODO: don't forget to change this
             output_folder_path=TEMP_PROCESSING_DIR
         )
     )
