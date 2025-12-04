@@ -41,14 +41,14 @@ OUTPUT_DIR = ""
 
 def main():
     """
-    main function of the automated content farm
+    main entry point of the automated content farm
     """
 
     """ ========== 1. Generate Script ====================="""
     # Use "random viral story" to let Gemini be creative
     original_script_content_data_json = asyncio.run(
         generate_thai_script_data(
-            topic=  "my head started getting dizzy and i felt ill, it got worse so i visited the hospital, turns out it was hydrogen monoxide poisoning by my boyfriend's farts",
+            topic= "i accidentally shat in the urinal",
             time_length="25-35",   # TODO: don't forget to change this
             output_folder_path=TEMP_PROCESSING_DIR
         )
