@@ -72,7 +72,7 @@ async def generate_with_gemini(text: str, gender: str, filename: str):
 
     # Configuration for Speech Generation
     # Note: This uses the generate_content with audio modality
-    prompt = f"Read this text realistically, naturally in Thai in an appropriate tone/energy for the script: {text}"
+    prompt = f"Read this text realistically, naturally in Burmese in an appropriate tone/energy for the script: {text}"
 
     try:
         response = client.models.generate_content(
@@ -226,20 +226,18 @@ async def generate_audio_narration_file_th(
 
 if __name__ == "__main__":
     # Test Data simulating script_generator output
-    test_data = {
-        "title_thai": "ช็อกโลก! จับได้แฟนแอบกินแม่ตัวเองคาเตียง!",
-        "script_thai": "แก เรื่องนี้พีคสุดในชีวิตฉันละ! คือฉันจับได้เว้ย... ว่าแฟนที่คบกันมา 5 ปีอะ... แอบแซ่บกับแม่ฉันเอง!! คือเรื่องมันเป็นงี้ ฉันกลับบ้านเร็วกะจะเซอร์ไพรส์วันครบรอบไง แต่พอเปิดประตูห้องนอนเข้าไปเท่านั้นแหละ... แม่เจ้าโว้ยยย! ภาพที่เห็นคือช็อกตาแตก! แฟนฉันกับแม่... อยู่บนเตียงเดียวกัน! ในสภาพล่อแหลมมากแก! ตอนนั้นคือสติหลุดไปแล้ว กรี๊ดลั่นบ้านเลย! แต่พอฉันตั้งสติได้แล้วเพ่งดูดีๆนะ... พีคในพีคคือ... สองคนนั้นกำลังนั่งพับถุงก๊อบแก๊บกันอย่างเมามันส์! คือแม่ฉันบอก 'ก็แฟนลูกเขาพับเป็นสามเหลี่ยมสวยดี แม่เลยชวนมาช่วย' สรุปนะ... ฉันเกือบจะบ้านแตกเพราะถุงพลาสติก! ชีวิตฉันมันละครเบอร์ไหนก่อนนน!",
-        "gender": "F"
-    }
+
 
 
     try:
-        with open('data.json', 'r') as f:
+        with open('___debug_generated_script/original_script_data_burmese.json', 'r') as f:
             script_data_json = json.load(f)
     except FileNotFoundError:
         print("Error: File not found.")
 
     # Run the test
+    os.makedirs("___debug_audio_generation", exist_ok=True) # create the folder
+
     asyncio.run(generate_audio_narration_file_th(
         script_data=script_data_json,
         output_folder_path="___debug_audio_generation",

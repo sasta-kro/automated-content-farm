@@ -15,10 +15,12 @@ from src.v2_thai.Util_functions import save_json_file
 load_dotenv()
 gemini_api_key = os.getenv("GEMINI_API_KEY")
 
+LANGUAGE = "Burmese"
+
 # Define the output schema using Pydantic for strict typing (New SDK feature)
 class ThaiScriptOutput(BaseModel):
-    title_thai: str = Field(description="A catchy, clickbait title in Thai for the video cover")
-    script_thai: str = Field(description="The viral short story script in Thai, slang allowed")
+    title_thai: str = Field(description=f"A catchy, clickbait title in {LANGUAGE} for the video cover")
+    script_thai: str = Field(description=f"The viral short story script in {LANGUAGE}, slang allowed")
     gender: str = Field(description="The gender of the narrator: 'M' or 'F'")
 
 async def generate_thai_script_data(
@@ -32,7 +34,7 @@ async def generate_thai_script_data(
 
     Returns: JSON with title_thai, script_thai, and gender.
     """
-    print(f"1. 🇹🇭 Asking Gemini to cook up a '{topic}' story script in Thai...")
+    print(f"1. 🇹🇭 Asking Gemini to cook up a '{topic}' story script in {LANGUAGE}...")
 
     if not gemini_api_key:
         raise ValueError("❌ Error: GEMINI_API_KEY not found in .env file")
@@ -42,12 +44,12 @@ async def generate_thai_script_data(
     # System Instruction: The "Persona"
     # We tell Gemini it is a famous Thai TikTok/Pantip storyteller.
     system_instruction = f"""
-    You are a famous Thai TikTok/Reels storyteller (นักเล่าเรื่องในโซเชียล). 
+    You are a famous {LANGUAGE} TikTok/Reels storyteller 
     Your style is:
-    - Tone: Gossip (เม้าท์มอย), Exciting (ตื่นเต้น), and Dramatic (ดราม่า).
-    - Language: Use natural Thai internet slang (e.g., แก, คือแบบ, พีคมาก, แม่เจ้า, สรุปนะ).
-    - NO formal language (ห้ามใช้ภาษาทางการ).
-    - The story must be narrated in the First Person POV ("ฉัน" or "ผม").
+    - Tone: Gossip, Exciting, and Dramatic 
+    - Language: Use natural {LANGUAGE} internet slang
+    - NO formal language 
+    - The story must be narrated in the First Person POV
     - Structure:
         1. HOOK (0-3s): Shocking statement to stop scrolling.
         2. BODY: Fast-paced storytelling, keep it juicy.
@@ -68,8 +70,8 @@ async def generate_thai_script_data(
     OUTPUT FORMAT:
     Return strictly raw JSON. Do not use Markdown code blocks.
     {{
-        "title_thai": "Catchy headline in Thai for the cover",
-        "script_thai": "The full spoken script in Thai...",
+        "title_{LANGUAGE.lower()}": "Catchy headline in {LANGUAGE} for the cover",
+        "script_{LANGUAGE.lower()}": "The full spoken script in {LANGUAGE}...",
         "gender": "F"
     }}
     """
@@ -122,21 +124,21 @@ async def translate_thai_content_to_eng(thai_content):
     Args:
         thai_content (dict): A dictionary containing 'title_thai', 'script_thai', and 'gender'.
     """
-    print(" 🇬🇧 Translating the Thai content to English...")
+    print(f" 🇬🇧 Translating the {LANGUAGE} content to English...")
     client = genai.Client(api_key=gemini_api_key)
 
 
     prompt = f"""
-    You are an expert Localization Specialist and Translator who specializes in Thai Social Media Culture and English Gen Z/Internet Slang.
+    You are an expert Localization Specialist and Translator who specializes in {LANGUAGE} Social Media Culture and English Gen Z/Internet Slang.
 
     YOUR TASK:
-    Translate the following Thai content into English.
+    Translate the following {LANGUAGE} content into English.
     
     INPUT DATA:
     {thai_content}
     
     CRITICAL INSTRUCTIONS:
-    1. The translation must match the energy of the source. If the Thai text is gossipy ("Mao Moi"), dramatic, or uses slang (e.g., "Gae", "Pirood", "Peak"), the English must use equivalent Internet slang) 
+    1. The translation must match the energy of the source. If the {LANGUAGE} text is gossipy ("Mao Moi"), dramatic, or uses slang (e.g., "Gae", "Pirood", "Peak"), the English must use equivalent Internet slang) 
     2. Pay attention to the 'gender' field. If 'F', use feminine/bestie slang if appropriate. If 'M', adjust accordingly.
     3. No Censorship of Vibe: Keep exclamation marks, caps, and the chaotic energy of the original post.
     4. Do not output conversational filler.
@@ -164,11 +166,12 @@ if __name__ == "__main__":
     # Test the function
     # Example topics: "catfish date", "office horror story", "winning lottery", "mother-in-law horror"
     # Use "random viral story" to let Gemini be creative
+    os.makedirs("___debug_generated_script", exist_ok=True) # create the folder
     result = asyncio.run(
         generate_thai_script_data(
-            topic=  "guy discovers my sister working in a brothel", #"caught boyfriend cheating with my mother",
+            topic=  "I shat in a urinal", #"caught boyfriend cheating with my mother",
             time_length="30-45",
-            output_folder_path="___debug_generated_thai_script",
+            output_folder_path="___debug_generated_script",
             )
     )
 
