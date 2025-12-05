@@ -1,105 +1,95 @@
 import asyncio # for async functions
-
-from dotenv import load_dotenv # to load env variables
-import os # also to load the api key
-
+import os # to manage paths
+import json  # to parse json from gemini response
 from google import genai # import gemini
 from google.genai import types  # thinking mode and extra ai features
-from pydantic import BaseModel, Field
+from pydantic import BaseModel, Field # to use the settings from config file
 
-import json  # to parse json from gemini response
 
+# utils
 from src.short_form_content_pipeline.Util_functions import save_json_file, set_debug_dir_for_module_of_pipeline
 
-# Load API Key
-load_dotenv()
-gemini_api_key = os.getenv("GEMINI_API_KEY")
 
-LANGUAGE = "Thai"
 
-# Define the output schema using Pydantic for strict typing (New SDK feature)
-class ThaiScriptOutput(BaseModel):
-    title_thai: str = Field(description=f"A catchy, clickbait title in {LANGUAGE} for the video cover")
-    script_thai: str = Field(description=f"The viral short story script in {LANGUAGE}, slang allowed")
-    gender: str = Field(description="The gender of the narrator: 'M' or 'F'")
+async def generate_script_data_json(
+        # default arguments are removed to reduce Order of Operation complications.
+        # now arguments MUST be passed
 
-async def generate_thai_script_data(
-        topic: str = "spicy cheating story that got karma",
-        time_length: str = "30-45", # default param
-        output_folder_path: str = ""
+        language: str,
+        topic: str,
+        time_length: str,
+        gemini_model_id: str,
+        gemini_api_key: str,
+        temperature: float,
+        output_folder_path: str,
 ):
     """
     Generates a viral-style Thai short-form script using Gemini.
-    WARNING: `time_length` is not very accurate, it returns something longer
+    WARNING: `time_length` is not very accurate, it returns something longer like about 1.3 to 1.4 times
+    Uses settings from src.config.SETTINGS (loaded from YAML).
 
-    Returns: JSON with title_thai, script_thai, and gender.
+    Returns: JSON with title_text, script_text, and gender
     """
-    print(f"1. 🇹🇭 Asking Gemini to cook up a '{topic}' story script in {LANGUAGE}...")
 
+    # Define the output schema using Pydantic for strict typing
+    # (inside the function so that it gets the `language` argument
+    class ScriptOutputData(BaseModel):
+        title_text: str = Field(description=f"A catchy, clickbait title in {language} for the video cover")
+        script_text: str = Field(description=f"The viral short story script in {language}, slang allowed")
+        gender: str = Field(description="The gender of the narrator: 'M' or 'F'")
+
+
+    print(f"1. 🇹🇭 Asking {gemini_model_id} to cook up a '{topic}' story script in {language}...")
+
+    # Initialize Client with Global Settings (stored in config)
     if not gemini_api_key:
-        raise ValueError("❌ Error: GEMINI_API_KEY not found in .env file")
+        raise ValueError("❌ Error: GEMINI_API_KEY is missing in Settings!")
 
     client = genai.Client(api_key=gemini_api_key)
 
+    # Construct prompts using Constants + Config injection
+
+
     # System Instruction: The "Persona"
-    # We tell Gemini it is a famous Thai TikTok/Pantip storyteller.
-    system_instruction = f"""
-    You are a famous {LANGUAGE} TikTok/Reels storyteller 
-    Your style is:
-    - Tone: Gossip, Exciting, and Dramatic 
-    - Language: Use natural {LANGUAGE} internet slang
-    - NO formal language 
-    - The story must be narrated in the First Person POV
-    - Structure:
-        1. HOOK (0-3s): Shocking statement to stop scrolling.
-        2. BODY: Fast-paced storytelling, keep it juicy.
-        3. PLOT TWIST/ENDING: Unexpected or funny conclusion.
-    
-    Target length: {time_length} seconds spoken.
-    DO NOT EXCEED THE TIME LIMIT. DO NOT GENERATE MARKDOWN FORMATTING IN THE SCRIPT
-    """
+    # We tell Gemini it is a famous Thai TikTok/Reel storyteller.
+    system_instruction = SCRIPT_GEN_SYSTEM_INSTRUCTION.format(
+        language=language,
+        time_length=time_length,
+    )
+
 
     # User Prompt
-    prompt = f"""
-    Generate a script for a short video about: "{topic}".
-    If the topic is "random", invent a viral-worthy story (e.g., cheating, office drama, lottery, ghost, revenge).
-    
-    Determine the most appropriate gender for the narrator based on the story 
-    (e.g., cheating boyfriend story -> Female narrator 'F', going to brothel and ended up with ladyboy -> Male narrator 'M').
-    
-    OUTPUT FORMAT:
-    Return strictly raw JSON. Do not use Markdown code blocks.
-    {{
-        "title_{LANGUAGE.lower()}": "Catchy headline in {LANGUAGE} for the cover",
-        "script_{LANGUAGE.lower()}": "The full spoken script in {LANGUAGE}...",
-        "gender": "F"
-    }}
-    """
+    prompt = SCRIPT_GEN_USER_PROMPT.format(
+        topic=topic,
+        language=language
+    )
 
     try:
         # Using the new google-genai SDK with structured output
         response = client.models.generate_content(
-            model="gemini-2.5-pro",
+            model=gemini_model_id,
             contents=prompt,
+
             # The SDK might return a parsed object or text depending on the version.
             # We handle the text parsing to be safe with the 'response_mime_type' enforcement
             config=types.GenerateContentConfig(
                 system_instruction=system_instruction,
-                response_mime_type="application/json", # Forces JSON output
-                response_schema=ThaiScriptOutput, # Enforces the Pydantic schema
-                temperature=1.25, # High temperature = more creative/drama
+                response_mime_type="application/json",  # Forces JSON output
+                response_schema=ScriptOutputData,   # Enforces the Pydantic schema
+                temperature=temperature,
             ),
         )
         if response: print("    (response received)")
+        # if it crashes after receiving response, it means the data returned by the AI is not in the right format
 
 
         # Parse JSON
         raw_json = response.text
         data = json.loads(raw_json)
 
-        print(f"Title: {data.get('title_thai')}")
+        print(f"Title: {data.get('title_text')}")
         print(f"Gender: {data.get('gender')}")
-        print(f"Full Script ('script_thai'): {data.get('script_thai')}...")
+        print(f"Full Script ('script_text'): {data.get('script_text')}...")
 
         # Save to a JSON file for inspection
         output_json_file_name = "original_script_data_th.json"
@@ -113,39 +103,32 @@ async def generate_thai_script_data(
     except Exception as e:
         print(f"❌ Error generating script: {e}")
         raise e
-        # Return a dummy fallback for testing if API fails
 
 
 # for translation
-async def translate_thai_content_to_eng(thai_content):
+async def translate_thai_content_to_eng(
+        non_english_content,
+        language: str,
+        gemini_api_key: str,
+        gemini_model_id: str,
+):
     """
-    Translates Thai social media content to English with full cultural nuance.
+    Translates non-english to English with full cultural nuance.
 
-    Args:
-        thai_content (dict): A dictionary containing 'title_thai', 'script_thai', and 'gender'.
+    non_english_content (dict): A dictionary containing 'title_text', 'script_text', and 'gender'.
     """
-    print(f" 🇬🇧 Translating the {LANGUAGE} content to English...")
+    print(f" 🇬🇧 Translating the {language} content to English...")
     client = genai.Client(api_key=gemini_api_key)
 
 
-    prompt = f"""
-    You are an expert Localization Specialist and Translator who specializes in {LANGUAGE} Social Media Culture and English Gen Z/Internet Slang.
-
-    YOUR TASK:
-    Translate the following {LANGUAGE} content into English.
-    
-    INPUT DATA:
-    {thai_content}
-    
-    CRITICAL INSTRUCTIONS:
-    1. The translation must match the energy of the source. If the {LANGUAGE} text is gossipy ("Mao Moi"), dramatic, or uses slang (e.g., "Gae", "Pirood", "Peak"), the English must use equivalent Internet slang) 
-    2. Pay attention to the 'gender' field. If 'F', use feminine/bestie slang if appropriate. If 'M', adjust accordingly.
-    3. No Censorship of Vibe: Keep exclamation marks, caps, and the chaotic energy of the original post.
-    4. Do not output conversational filler.
-    """
+    # Use the constant template
+    prompt = SCRIPT_TRANSLATION_PROMPT.format(
+        language=language,
+        content_data=non_english_content
+    )
 
     response = client.models.generate_content(
-    model="gemini-2.5-pro",
+    model=gemini_model_id,
     contents=prompt,
     config=types.GenerateContentConfig(
         # This enables the thinking capability
@@ -160,20 +143,31 @@ async def translate_thai_content_to_eng(thai_content):
     print("-----Translation finished----\n")
     return raw_text
 
-
-
 if __name__ == "__main__":
-    # Test the function
-    # Example topics: "catfish date", "office horror story", "winning lottery", "mother-in-law horror"
-    # "random viral story" to let Gemini be creative
+    # Import config, settngs, and constants
+    # IMPORTANT: settings are not imported at the start of the files
+    # because Python works in a way where it causes undefined errors
+    from src.short_form_content_pipeline._CONFIG import SETTINGS
+    SETTINGS.load_profile("thai_funny_story.yaml")
+
+    from src.short_form_content_pipeline._CONSTANTS import (
+        SCRIPT_GEN_SYSTEM_INSTRUCTION,
+        SCRIPT_GEN_USER_PROMPT,
+        SCRIPT_TRANSLATION_PROMPT
+    )
 
     sub_debug_dir = "_d_script_generation"
     full_debug_dir = set_debug_dir_for_module_of_pipeline(sub_debug_dir)
 
+
     result = asyncio.run(
-        generate_thai_script_data(
+        generate_script_data_json(
+            language="Thai",
             topic=  "tripped and fell onto dog poop", #"caught boyfriend cheating with my mother",
             time_length="30-45",
+            gemini_model_id="gemini-2.5-pro",
+            gemini_api_key= SETTINGS.GEMINI_API_KEY,
+            temperature=SETTINGS.script_generation_temperature,
             output_folder_path=full_debug_dir
             )
     )
@@ -181,5 +175,10 @@ if __name__ == "__main__":
     # translate to English so that I can understand
     if result is not None:
         asyncio.run(
-            translate_thai_content_to_eng(result)
+            translate_thai_content_to_eng(
+                non_english_content=result,
+                language="Thai",
+                gemini_api_key=SETTINGS.GEMINI_API_KEY,
+                gemini_model_id="gemini-2.5-pro",
+            )
         )

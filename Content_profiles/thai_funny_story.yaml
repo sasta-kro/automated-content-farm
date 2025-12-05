@@ -1,0 +1,34 @@
+# Content_profiles/thai_gossip.yaml
+
+# not finished yet
+
+content:
+  # IMPORTANT: This is to choose which preset of system instructions and prompts to use
+  theme_for_persona: "Thai Funny Story"
+
+  language: "Thai"
+
+  # multi-line in .yaml (double quotes not needed after `|`)
+  topic: | 
+    spicy cheating story that got karma
+
+  # this should be a range of time (seconds) written in string format
+  time_length: "25-35"
+
+  script_ai_model: "gemini-2.5-pro"
+
+audio:
+  tts_provider: "gemini"                    # or "edge-tts"
+  speed_factor: 1.35                       # Brainrot speed
+
+visuals:
+  bg_video_source_folder: "media_resources"
+  font: "Prompt-Bold.ttf"
+  font_size: 120                 # Thai needs slightly smaller font than Eng usually
+  font_color: "yellow"            # Yellow is standard for Thai TikTok
+  stroke_width: 4
+  stroke_color: "black"
+
+pipeline:
+  use_mfa_alignment: true
+  clean_temp_0w0_after_run: false

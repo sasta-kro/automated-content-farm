@@ -18,7 +18,7 @@ venv/
 .env
 
 # unused legacy code
-/src/legacy_code_archives/
+/src/_legacy_code_archives/
 
 # resources
 /media_resources/

@@ -8,11 +8,12 @@ import moviepy.video.fx.all as vfx
 
 from moviepy.video.io.VideoFileClip import VideoFileClip
 from moviepy.video.io.ffmpeg_tools import ffmpeg_merge_video_audio
+from proglog.proglog import SETTINGS
 
 from src.short_form_content_pipeline.composite_final_video_mini_pipeline import run_composite_final_video_pipeline
-from src.short_form_content_pipeline.generate_audio_th_from_script import generate_audio_narration_file_th
-from src.short_form_content_pipeline.generate_script_th import generate_thai_script_data, translate_thai_content_to_eng
-from src.short_form_content_pipeline.generate_subtitle_clip import generate_subtitle_clips_data, _create_debug_subtitle_clip
+from src.short_form_content_pipeline.generate_audio_from_script import generate_audio_narration_file_th
+from src.short_form_content_pipeline.generate_script_text import generate_script_data_json, translate_thai_content_to_eng
+from src.short_form_content_pipeline.generate_subtitle_clip_moviepy import generate_subtitle_clips_moviepy_obj, _create_debug_subtitle_clip
 from src.short_form_content_pipeline.mfa_transcript_alignment_mini_pipeline import run_mfa_pipeline
 
 ## Define Directories and files
@@ -43,14 +44,22 @@ def main():
     """
     main entry point of the automated content farm
     """
+    """ ========== 0. Initialize Settings and Configurations =========="""
+    SETTINGS.load_profile("thai_funny_story.yaml")
+
+
 
     """ ========== 1. Generate Script ====================="""
     # Use "random viral story" to let Gemini be creative
     original_script_content_data_json = asyncio.run(
-        generate_thai_script_data(
-            topic= "i accidentally shat in the urinal",
-            time_length="25-35",   # TODO: don't forget to change this
-            output_folder_path=TEMP_PROCESSING_DIR
+        generate_script_data_json(
+            language=SETTINGS.content.language,
+            topic= SETTINGS.content.topic,
+            time_length=SETTINGS.content.time_length,
+            gemini_model_id=SETTINGS.content.script_ai_model,
+            gemini_api_key= SETTINGS.GEMINI_API_KEY,
+            temperature=SETTINGS.script_generation_temperature,
+            output_folder_path=SETTINGS.TEMP_PROCESSING_DIR,
         )
     )
 
@@ -84,7 +93,7 @@ def main():
 
 
     """ =========== 4. Generate subtitle clips"""
-    list_of_moviepyTextClips = generate_subtitle_clips_data(
+    list_of_moviepyTextClips = generate_subtitle_clips_moviepy_obj(
         word_data_dict=aligned_transcript_word_and_time_data,
     )
 

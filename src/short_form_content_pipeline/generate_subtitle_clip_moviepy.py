@@ -66,7 +66,7 @@ def generate_subtitle_clips_moviepy_obj(
         videosize=(1080, 1920),
         font= "/Users/saiaikeshwetunaung/Documents/PythonProjects/Automated_content_farm/media_resources/thai_fonts/Prompt-Bold.ttf",
 
-        fontsize=120,        # Thai needs slightly smaller font than Eng usually
+        fontsize=120,
         color='yellow',     # Yellow is standard for Thai TikTok
         stroke_width=4,
         stroke_color='black',

@@ -59,6 +59,8 @@ def _tokenize_thai_script(thai_text):
     """
     Tokenizes Thai text using PyThaiNLP with a custom dictionary injected
     to handle slang/specific words correctly. Returns a space-separated string.
+
+    This is how the words will the seperated for the subtitle. MFA will just align timestamps.
     """
 
     # Words that PyThaiNLP usually breaks incorrectly. A custom dictionary of words to inject to the tokenizer
