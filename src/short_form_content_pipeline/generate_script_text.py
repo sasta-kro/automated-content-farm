@@ -9,7 +9,12 @@ from pydantic import BaseModel, Field # to use the settings from config file
 # utils
 from src.short_form_content_pipeline.Util_functions import save_json_file, set_debug_dir_for_module_of_pipeline
 
-
+# Import constants that are in another file
+from src.short_form_content_pipeline._CONSTANTS import (
+    SCRIPT_GEN_SYSTEM_INSTRUCTION,
+    SCRIPT_GEN_USER_PROMPT,
+    SCRIPT_TRANSLATION_PROMPT
+)
 
 async def generate_script_data_json(
         # default arguments are removed to reduce Order of Operation complications.
@@ -92,7 +97,7 @@ async def generate_script_data_json(
         print(f"Full Script ('script_text'): {data.get('script_text')}...")
 
         # Save to a JSON file for inspection
-        output_json_file_name = "original_script_data_th.json"
+        output_json_file_name = "original_script_data.json"
         full_json_save_location = os.path.join(output_folder_path, output_json_file_name)
         save_json_file(data, full_json_save_location)
 
@@ -149,12 +154,6 @@ if __name__ == "__main__":
     # because Python works in a way where it causes undefined errors
     from src.short_form_content_pipeline._CONFIG import SETTINGS
     SETTINGS.load_profile("thai_funny_story.yaml")
-
-    from src.short_form_content_pipeline._CONSTANTS import (
-        SCRIPT_GEN_SYSTEM_INSTRUCTION,
-        SCRIPT_GEN_USER_PROMPT,
-        SCRIPT_TRANSLATION_PROMPT
-    )
 
     sub_debug_dir = "_d_script_generation"
     full_debug_dir = set_debug_dir_for_module_of_pipeline(sub_debug_dir)

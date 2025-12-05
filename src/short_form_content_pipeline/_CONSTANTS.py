@@ -59,14 +59,21 @@ CRITICAL INSTRUCTIONS:
 """
 
 
+# --- Audio Generation Constants ---
 
-# -------- Testing ------
-if __name__ == "__main__":
-    from src.short_form_content_pipeline._CONFIG import SETTINGS
-    # initializing the settings singleton with a default profile
-    SETTINGS.load_profile(profile_name="thai_funny_story.yaml")
+# Gemini Voices (Main, much better realism)
+# Mappings to closest "Dipper" and "Vega" equivalents
+AUDIO_VOICE_MAPPING_GEMINI = {
+    "M": "Charon", # Deep, Storyteller
+    "F": "Aoede"   # Breezy, Confident
+}
 
-    language = SETTINGS.content.language
-    print(language)
+# Edge TTS (backup)
+AUDIO_VOICE_MAPPING_EDGE = {
+    "M": "th-TH-NiwatNeural",
+    "F": "th-TH-PremwadeeNeural"
+}
 
 
+# Prompt for Gemini Audio
+AUDIO_GEMINI_PROMPT_TEMPLATE = "Read this text realistically, naturally in {language} in an appropriate tone/energy for the script: {text}"

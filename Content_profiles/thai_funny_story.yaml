@@ -18,8 +18,11 @@ content:
   script_ai_model: "gemini-2.5-pro"
 
 audio:
-  tts_provider: "gemini"                    # or "edge-tts"
-  speed_factor: 1.35                       # Brainrot speed
+  tts_provider: "gemini"   # or "edge-tts" (Gemini is way better)
+
+  audio_ai_model: "gemini-2.5-flash-preview-tts"
+
+  speed_factor: 1.32                       # Brainrot speed (1.35 is too fast)
 
 visuals:
   bg_video_source_folder: "media_resources"

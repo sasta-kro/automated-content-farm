@@ -1,69 +1,87 @@
 import asyncio
-import json
 import os
-
-from dotenv import load_dotenv
+import wave
 import edge_tts
+import ffmpeg
 from google import genai
 from google.genai import types
 
-
-import wave # to write/save gemini's audio file as .wav since it returns that
-import ffmpeg # to speed up the audio clip
-
+# Import Constants
+from src.short_form_content_pipeline._CONSTANTS import (
+    AUDIO_VOICE_MAPPING_EDGE,
+    AUDIO_VOICE_MAPPING_GEMINI,
+    AUDIO_GEMINI_PROMPT_TEMPLATE
+)
 from src.short_form_content_pipeline.Util_functions import set_debug_dir_for_module_of_pipeline
 
-# ==================== Config
+# ==================== Audio Processing (FFmpeg) ====================
 
-# Load API Key
-load_dotenv()
-GEMINI_API_KEY = os.getenv("GEMINI_API_KEY")
+def change_audio_speed(
+        input_path: str,
+        output_path: str,
+        speed_factor: float
+):
+    """
+        Uses FFmpeg 'atempo' to create a high-quality sped-up audio file
+         WITHOUT changing pitch.
 
-# Voice Mapping
-# 1. Edge TTS (Reliable Thai Voices)
-EDGE_VOICES = {
-    "M": "th-TH-NiwatNeural",
-    "F": "th-TH-PremwadeeNeural"
-}
+         Returns the sped up audio file path
+    """
+    if speed_factor == 1.0:
+        # Just copy if speed is 1.0
+        # return input_path # TODO (Optimization: Handle this in main logic)
+        pass
 
-# 2. Gemini Voices
-# Mappings to closest "Dipper" and "Vega" equivalents
-GEMINI_VOICES = {
-    "M": "Charon", # Deep, Storyteller (closest to Dipper)
-    "F": "Aoede"   # Breezy, Confident (closest to Vega)
-}
+    print(f"   ⚡ Speeding up audio by {speed_factor}x using FFmpeg...")
 
+    try:
+        # `atempo` is the anti-chipmunk filter
+        # Note: atempo is limited to [0.5, 2.0]. If we need > 2, chaining is required
+        stream = ffmpeg.input(input_path)
+        stream = ffmpeg.filter(stream, 'atempo', speed_factor)
+        stream = ffmpeg.output(stream, output_path)
+        ffmpeg.run(stream, overwrite_output=True, quiet=True)
 
+        return output_path
 
-# ===================== Gemini
+    except ffmpeg.Error as e:
+        print(f"❌ Audio Speedup Failed. FFmpeg Error: {e.stderr.decode('utf8') if e.stderr else str(e)}")
+        raise e
 
-async def generate_with_gemini(text: str, gender: str, filename: str):
+# ==================== Gemini Generator ====================
+
+async def generate_with_gemini(
+        text: str,
+        gender: str,
+        language: str,
+        api_key: str,
+        audio_ai_model: str,
+        audio_filename: str
+):
     """
     Generates audio using Gemini 2.5 Flash Audio Generation.
-    WARNING: Thai support is experimental.
     """
-    if not GEMINI_API_KEY:
+    if not api_key:
         raise ValueError("GEMINI_API_KEY is missing!")
 
-    client = genai.Client(api_key=GEMINI_API_KEY)
-    voice_name = GEMINI_VOICES.get(gender, "Aoede")
+    client = genai.Client(api_key=api_key)
+    voice_name = AUDIO_VOICE_MAPPING_GEMINI.get(gender, "Aoede")
 
+    # Force .wav extension for Gemini raw output
+    audio_filename = audio_filename.replace(".mp3", ".wav")
 
-    filename = filename.replace(".mp3", ".wav")
-    output_file_path = filename
+    print(f" 🎙️ Audio Synthesizing (Gemini) | Voice: {voice_name}...")
 
-    print(f" 🎙️ Audio Synthesizing (Gemini API) with voice: {voice_name}...")
+    prompt = AUDIO_GEMINI_PROMPT_TEMPLATE.format(language=language, text=text)
 
     # Configuration for Speech Generation
     # Note: This uses the generate_content with audio modality
-    prompt = f"Read this text realistically, naturally in Burmese in an appropriate tone/energy for the script: {text}"
-
     try:
         response = client.models.generate_content(
-            model="gemini-2.5-flash-preview-tts",
+            model=audio_ai_model,
             contents=prompt,
             config=types.GenerateContentConfig(
-                response_modalities=["AUDIO"], # important: make it reply in audio
+                response_modalities=["AUDIO"],
                 speech_config=types.SpeechConfig(
                     voice_config=types.VoiceConfig(
                         prebuilt_voice_config=types.PrebuiltVoiceConfig(
@@ -74,7 +92,7 @@ async def generate_with_gemini(text: str, gender: str, filename: str):
             )
         )
 
-        print("         response received")
+        print("         response received") # for debug
 
         # Gemini returns raw audio bytes (PCM or MP3 depending on config)
         # We need to save it.
@@ -85,119 +103,162 @@ async def generate_with_gemini(text: str, gender: str, filename: str):
             part = response.candidates[0].content.parts[0]
 
             if part.inline_data and part.inline_data.data:
-                # 2. Get the raw PCM bytes (Linear16)
+                # Get the raw PCM bytes (Linear16)
                 audio_data = part.inline_data.data
 
-                # optional
                 print(f"   Received {len(audio_data)} bytes of raw PCM audio.")
 
-                # 3. Write to WAV file with correct 24kHz header
-                with wave.open(output_file_path, "wb") as wf:
-                    wf.setnchannels(1)      # Mono
-                    wf.setsampwidth(2)      # 16-bit (2 bytes per sample)
+
+                #  Write to WAV file with correct 24kHz header
+                with wave.open(audio_filename, "wb") as wf:
+                    wf.setnchannels(1)    # Mono
+                    wf.setsampwidth(2)     # 16-bit (2 bytes per sample)
                     wf.setframerate(24000)  # 24kHz (Standard for Gemini Flash)
                     wf.writeframes(audio_data)
 
-                return output_file_path
+                return audio_filename
             else:
                 print("   ❌ Gemini response contained no inline audio data.")
+                return None
 
     except Exception as e:
         print(f"   ❌ Gemini TTS Failed: {e}")
+        return None
 
+# ==================== Edge TTS Generator (just for backup) ====================
 
-
-# ========================== Edge (just for backup)
-
-async def generate_with_edge_tts(text: str, gender: str, filename: str) -> str:
+async def generate_with_edge_tts(
+        text: str,
+        gender: str,
+        language: str,
+        filename: str
+) -> str:
     """
-    Generates audio using MS Edge TTS (Best for Thai).
+    (Dropped feature because Gemini works well, plus I don't wanna bother indexing all language speakers)
+    Generates audio using MS Edge TTS.
     """
-    voice = EDGE_VOICES.get(gender, "th-TH-PremwadeeNeural")
-    output_file_path = filename
+    voice = AUDIO_VOICE_MAPPING_EDGE.get(gender, "th-TH-PremwadeeNeural")
 
-    # Adjusting rate for "TikTok Speed" (Thai speakers talk fast online)
+    # Ensure .mp3
+    if not filename.endswith(".mp3"):
+        filename = filename + ".mp3"
+
     communicate = edge_tts.Communicate(text, voice)
 
-    print(f" 🎙️ Audio Synthesizing (edge-tts) with {voice}...")
-    await communicate.save(output_file_path)
-    return output_file_path
+    print(f" 🎙️ Audio Synthesizing (EdgeTTS) | Voice: {voice}...")
+    await communicate.save(filename)
+    return filename
 
+# ==================== Main wrapper function ====================
 
-
-# ========================== main wrapper function
-
-async def generate_audio_narration_file_th(
+async def generate_audio_narration_file(
         script_data: dict,
-        output_folder_path: str = "",
-        use_gemini: bool = False
+        output_folder_path: str,
+
+        # Settings Injection
+        language: str,
+        tts_provider: str, # "gemini" or "edge-tts"
+        gemini_api_key: str,  # edge-tts doesn't need api key
+        audio_ai_model: str,
+        speed_factor: float
 ):
     """
     Main entry point for audio generation.
-    Args:
-        script_data (dict): From script_generator.py (must contain 'script_thai' and 'gender')
-        output_folder_path: where the output audio file will be stored in
-        use_gemini (bool): If True, tries Gemini first. Defaults to False for safety.
+    1. Generates Raw Audio (Normal Speed).
+    2. Processes Speed with FFmpeg (speed up).
+    3. Returns path to Final Audio.
+
+    script_data (dict): From script_generator.py (must contain 'script_text' and 'gender')
+    output_folder_path: where the output audio file will be stored in
     """
     print("2. 🔊 Starting Audio Generation...")
 
-    text = script_data.get("script_thai", "")
-    gender = script_data.get("gender", "F")
+    # Extract Data
+    text = script_data.get("script_text")
+    gender = script_data.get("gender", "F") # f is default
 
-    # Sanitize filename from title
-    cleaned_title = "".join([c for c in script_data.get("title_thai", "audio") if c.isalnum() or c in (' ', '_')]).rstrip()
+    if not text:
+        raise ValueError("❌ No script text found in data object!")
 
-    filename_supported_thai_title = cleaned_title[:20].strip().replace(' ', '_') # optional, in case I want to have thai filename
+    # Prepare Filenames
+    # no extension yet. Extension will be added later since edge gives mp3 and gemini give wav
+    base_name = "raw_original_audio"
 
     # joined with the output folder
-    # no extension yet. Extension will be added later since edge gives mp3 and gemini give wav
-    filename = os.path.join(output_folder_path, f"raw_original_audio")
+    raw_path_no_ext = os.path.join(output_folder_path, base_name)
 
-    raw_audio_output_file = None
+    normal_audio_file_path = None # temporarily declaring
 
-    # Try Gemini if bool arg is true
-    if use_gemini:
-        raw_audio_output_file = await generate_with_gemini(
+    # --- Generation Phase ---
+    if tts_provider == "gemini":
+        normal_audio_file_path = await generate_with_gemini(
             text=text,
             gender=gender,
-            filename= f"{filename}.wav"
+            language=language,
+            api_key=gemini_api_key,
+            audio_ai_model=audio_ai_model,
+            audio_filename=raw_path_no_ext + ".wav"
         )
 
-    # Fallback or Default to EdgeTTS
-    if not use_gemini: # only print when gemini bool is set to true
-        try:
-            raw_audio_output_file = await generate_with_edge_tts(
-                text=text,
-                gender=gender,
-                filename= f"{filename}.mp3"
-            )
-        except Exception as e:
-            raise e
+    # Fallback / Default to Edge
+    if not normal_audio_file_path or tts_provider == "edge-tts":
+        normal_audio_file_path = await generate_with_edge_tts(
+            text=text, gender=gender, language=language, filename=raw_path_no_ext + ".mp3"
+        )
 
-    if raw_audio_output_file:
-        print(f"  >>> Raw Audio saved to: {raw_audio_output_file}")
-        print("✅ Finished generating audio file.\n")
-        return raw_audio_output_file # returns the un-sped-up audio
+    if not normal_audio_file_path or not os.path.exists(normal_audio_file_path):
+        raise RuntimeError("❌ Audio generation failed. Audio file cannot be found or not generated.")
+
+    print(f"   ✅ Raw Audio saved: {normal_audio_file_path}")
+
+    # --- Processing audio (Speed Up) ---
+    if speed_factor > 1.0:
+        final_filename = f"narration_audio_sped_up_{speed_factor}x.mp3"
+        final_spedup_audio_output_path = os.path.join(output_folder_path, final_filename)
+
+        # Run FFmpeg helper function
+        change_audio_speed(
+            input_path=normal_audio_file_path,
+            output_path=final_spedup_audio_output_path,
+            speed_factor=speed_factor)
+
+        return final_spedup_audio_output_path
     else:
-        print("❌ Raw audio file generation failed or not found or not generated")
-        return
+        # If speed is 1.0, just return the raw file
+        return normal_audio_file_path
 
 
-# ================ Execution
+# ================ Testing
 
 if __name__ == "__main__":
+    import json
+    # Import Settings
+    from src.short_form_content_pipeline._CONFIG import SETTINGS
+    # Load Profile
+    SETTINGS.load_profile("thai_funny_story.yaml")
 
-    try:
-        with open('___debug_dir/_d_script_generation/original_script_data_burmese.json', 'r') as f:
+    # We try to load the file generated by previous step if it exists
+    mock_input_path = "___debug_dir/_d_script_generation/original_script_data.json"
+
+    if os.path.exists(mock_input_path):
+        with open(mock_input_path, 'r', encoding='utf-8') as f:
             script_data_json = json.load(f)
-    except FileNotFoundError:
-        print("Error: File not found.")
+    else:
+        raise Exception("Audio file not found")
 
-    sub_debug_dir_for_this_module = "_d_audio_generation"
-    full_debug_dir = set_debug_dir_for_module_of_pipeline(sub_debug_dir_for_this_module)
+    sub_debug_dir = "_d_audio_generation"
+    full_debug_dir = set_debug_dir_for_module_of_pipeline(sub_debug_dir)
 
-    asyncio.run(generate_audio_narration_file_th(
+
+    final_audio = asyncio.run(   generate_audio_narration_file(
         script_data=script_data_json,
         output_folder_path=full_debug_dir,
-        use_gemini=True)
-    )
+        # Inject from SETTINGS
+        language=SETTINGS.content.language,
+        tts_provider=SETTINGS.audio.tts_provider,
+        gemini_api_key=SETTINGS.GEMINI_API_KEY,
+        audio_ai_model=SETTINGS.audio.audio_ai_model,
+        speed_factor=SETTINGS.audio.speed_factor
+    ))
+
+    print(f"\n Final Result: {final_audio}")

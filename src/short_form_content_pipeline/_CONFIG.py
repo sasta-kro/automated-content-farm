@@ -25,11 +25,12 @@ class ContentSettings(BaseModel):
     theme_for_persona: str
     language: str
     topic: str
-    time_lengthS: str
+    time_length: str
     script_ai_model: str
 
 class AudioSettings(BaseModel):
     tts_provider: Literal["gemini", "edge-tts"]
+    audio_ai_model: str
     speed_factor: float
 
 class VisualSettings(BaseModel):

@@ -44,8 +44,13 @@ def main():
     """
     main entry point of the automated content farm
     """
+
     """ ========== 0. Initialize Settings and Configurations =========="""
+    from src.short_form_content_pipeline._CONFIG import SETTINGS
     SETTINGS.load_profile("thai_funny_story.yaml")
+
+
+
 
 
 
