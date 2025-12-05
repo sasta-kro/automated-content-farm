@@ -11,6 +11,7 @@ from google.genai import types
 import wave # to write/save gemini's audio file as .wav since it returns that
 import ffmpeg # to speed up the audio clip
 
+from src.short_form_content_pipeline.Util_functions import set_debug_dir_for_modules_of_pipeline
 
 # ==================== Config
 
@@ -187,16 +188,16 @@ async def generate_audio_narration_file_th(
 if __name__ == "__main__":
 
     try:
-        with open('___debug_generated_script/original_script_data_burmese.json', 'r') as f:
+        with open('___debug_dir/_d_script_generation/original_script_data_burmese.json', 'r') as f:
             script_data_json = json.load(f)
     except FileNotFoundError:
         print("Error: File not found.")
 
-    # Run the test
-    os.makedirs("___debug_audio_generation", exist_ok=True) # create the folder
+    sub_debug_dir_for_this_module = "_d_audio_generation"
+    full_debug_dir = set_debug_dir_for_modules_of_pipeline(sub_debug_dir_for_this_module)
 
     asyncio.run(generate_audio_narration_file_th(
         script_data=script_data_json,
-        output_folder_path="___debug_audio_generation",
+        output_folder_path=full_debug_dir,
         use_gemini=True)
     )

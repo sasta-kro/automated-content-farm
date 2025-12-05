@@ -9,13 +9,13 @@ from pydantic import BaseModel, Field
 
 import json  # to parse json from gemini response
 
-from src.short_form_content_pipeline.Util_functions import save_json_file
+from src.short_form_content_pipeline.Util_functions import save_json_file, set_debug_dir_for_modules_of_pipeline
 
 # Load API Key
 load_dotenv()
 gemini_api_key = os.getenv("GEMINI_API_KEY")
 
-LANGUAGE = "Burmese"
+LANGUAGE = "Thai"
 
 # Define the output schema using Pydantic for strict typing (New SDK feature)
 class ThaiScriptOutput(BaseModel):
@@ -165,13 +165,16 @@ async def translate_thai_content_to_eng(thai_content):
 if __name__ == "__main__":
     # Test the function
     # Example topics: "catfish date", "office horror story", "winning lottery", "mother-in-law horror"
-    # Use "random viral story" to let Gemini be creative
-    os.makedirs("___debug_generated_script", exist_ok=True) # create the folder
+    # "random viral story" to let Gemini be creative
+
+    sub_debug_dir = "_d_script_generation"
+    full_debug_dir = set_debug_dir_for_modules_of_pipeline(sub_debug_dir)
+
     result = asyncio.run(
         generate_thai_script_data(
-            topic=  "I shat in a urinal", #"caught boyfriend cheating with my mother",
+            topic=  "tripped and fell onto dog poop", #"caught boyfriend cheating with my mother",
             time_length="30-45",
-            output_folder_path="___debug_generated_script",
+            output_folder_path=full_debug_dir
             )
     )
 
