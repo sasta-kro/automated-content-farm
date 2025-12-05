@@ -7,7 +7,7 @@ import textgrid  # Assuming import
 from pythainlp import word_tokenize  # Assuming import
 from pythainlp.util import normalize, dict_trie # Assuming import
 
-from src.v2_thai.Util_functions import save_json_file
+from src.short_form_content_pipeline.Util_functions import save_json_file
 import difflib
 
 

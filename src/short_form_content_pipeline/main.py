@@ -9,11 +9,11 @@ import moviepy.video.fx.all as vfx
 from moviepy.video.io.VideoFileClip import VideoFileClip
 from moviepy.video.io.ffmpeg_tools import ffmpeg_merge_video_audio
 
-from src.v2_thai.composite_final_video_mini_pipeline import run_composite_final_video_pipeline
-from src.v2_thai.generate_audio_th_from_script import generate_audio_narration_file_th
-from src.v2_thai.generate_script_th import generate_thai_script_data, translate_thai_content_to_eng
-from src.v2_thai.generate_subtitle_clip import generate_subtitle_clips_data, _create_debug_subtitle_clip
-from src.v2_thai.mfa_transcript_alignment_mini_pipeline import run_mfa_pipeline
+from src.short_form_content_pipeline.composite_final_video_mini_pipeline import run_composite_final_video_pipeline
+from src.short_form_content_pipeline.generate_audio_th_from_script import generate_audio_narration_file_th
+from src.short_form_content_pipeline.generate_script_th import generate_thai_script_data, translate_thai_content_to_eng
+from src.short_form_content_pipeline.generate_subtitle_clip import generate_subtitle_clips_data, _create_debug_subtitle_clip
+from src.short_form_content_pipeline.mfa_transcript_alignment_mini_pipeline import run_mfa_pipeline
 
 ## Define Directories and files
 

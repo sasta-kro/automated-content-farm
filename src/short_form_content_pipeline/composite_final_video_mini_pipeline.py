@@ -6,7 +6,7 @@ import random
 import PIL.Image
 from moviepy.video.fx.speedx import speedx
 
-from src.v2_thai.Util_functions import display_print_ffmpeg_metadata_parameters
+from src.short_form_content_pipeline.Util_functions import display_print_ffmpeg_metadata_parameters
 
 # FIX: Register ANTIALIAS as LANCZOS for Pillow 10.x compatibility
 if not hasattr(PIL.Image, 'ANTIALIAS'):
@@ -17,7 +17,7 @@ from moviepy.editor import VideoFileClip, CompositeVideoClip, AudioFileClip, Tex
 from moviepy.video.fx.all import crop, resize, mirror_x
 
 
-from src.v2_thai.generate_subtitle_clip import generate_subtitle_clips_data
+from src.short_form_content_pipeline.generate_subtitle_clip import generate_subtitle_clips_data
 
 # ==========================================
 #        PRIVATE SUB-FUNCTIONS

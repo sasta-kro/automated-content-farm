@@ -9,7 +9,7 @@ from pydantic import BaseModel, Field
 
 import json  # to parse json from gemini response
 
-from src.v2_thai.Util_functions import save_json_file
+from src.short_form_content_pipeline.Util_functions import save_json_file
 
 # Load API Key
 load_dotenv()
