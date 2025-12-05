@@ -11,6 +11,12 @@ from src.short_form_content_pipeline.Util_functions import save_json_file, set_d
 import difflib
 
 
+# Import Constants
+from src.short_form_content_pipeline._CONSTANTS import MFA_THAI_SLANG_DICTIONARY
+from src.short_form_content_pipeline.Util_functions import save_json_file, set_debug_dir_for_module_of_pipeline
+
+
+
 # ==========================================
 #        SUB-FUNCTIONS (modules of the mfa mini pipeline)
 # ==========================================
@@ -63,37 +69,8 @@ def _tokenize_thai_script(thai_text):
     This is how the words will the seperated for the subtitle. MFA will just align timestamps.
     """
 
-    # Words that PyThaiNLP usually breaks incorrectly. A custom dictionary of words to inject to the tokenizer
-    custom_words_netizen_slang = [
-        "อาบอบนวด",  # Brothel (Might get split into อา-บอบ-นวด)
-        "ป้ะ",       # Slang for "Right?"
-        "แกรร",      # Dragged out "Girl"
-        "พอดี",      # Sometimes splits if next to a name
-        "ช็อค",      # Shock
-        "แม่เจ้าโว้ย", # Exclamation
-
-        # General Emphasizers & Adjectives
-        "ฉ่ำ", "ของแทร่", "จึ้ง", "ตึ้ง", "เริ่ด", "ปัง", "นัมเบอร์วัน",
-        "เกินต้าน", "สุดเบอร์", "ยืนหนึ่ง", "ดือ", "ชื่นใจ", "ใจฟู",
-
-        # Actions & Reactions
-        "ช็อตฟีล", "แกง", "ป้ายยา", "ตำ", "บู้บี้", "หยุมหัว",
-        "มองบน", "พักก่อน", "จะเครซี่", "กำหมัด", "ทัวร์ลง",
-
-        # Person Types & Status
-        "ตัวแม่", "ตัวมารดา", "ตัวตึง", "ตัวลูก", "น้อน", "ต้าว",
-        "สลิ่ม", "สามกีบ", "ติ่ง", "เบียว",
-
-        # Feelings & Vibes
-        "นอยด์", "ฟิน", "บรอ", "โฮป", "อ่อม", "เกรี้ยวกราด",
-        "โป๊ะ", "เลิ่กลั่ก", "ตุย", "ขิต", "สู่ขิต",
-
-        # Context-Specific (Gaming/Streaming/Social)
-        "กาว", "เกลือ", "ขิง", "ด้อม", "เมพ", "นู้บ", "หัวร้อน"
-    ]
-
     # Create a Trie (specialized data structure for tokenization)
-    custom_dictionary_trie = dict_trie(custom_words_netizen_slang)
+    custom_dictionary_trie = dict_trie(MFA_THAI_SLANG_DICTIONARY)
 
     # 'newmm' is standard dictionary-based tokenizer
     words = word_tokenize(
@@ -166,6 +143,7 @@ def _execute_mfa_subprocess(input_dir, output_dir):
     print("  ⏳ Running MFA Alignment (this might take a moment)...")
 
     # Constructing command to run inside 'mfa' conda environment
+    # In the future, we could pull 'mfa' env name from SETTINGS if needed
     command = [
         "conda", "run", "-n", "mfa", "mfa", "align",
         input_dir, "thai_mfa", "thai_mfa", output_dir,
@@ -232,14 +210,14 @@ def _repair_unknown_tokens(raw_extracted_mfa_data_json: list[dict]):
 
 
 def run_mfa_pipeline(
-        raw_script_text_from_json,
-        audio_file_path,
-        output_dir,
+        raw_script_text_from_json: str,
+        audio_file_path: str,
+        output_dir: str,
         mfa_cmd="mfa"
 ):
     """
-    Transcribes subtitles and timestamps data from input audio and script files with MFA.
     Orchestrator function for the MFA alignment pipeline.
+    Transcribes subtitles and timestamps data from input audio and script files with MFA.
     """
 
     print("3. 📝 Generating Transcript with word and timestamps for subtitles...")
@@ -288,27 +266,32 @@ def run_mfa_pipeline(
 
 
 if __name__ == "__main__":
-    narration_audio_file = 'correct_test_files/raw_original_audio.wav'
+    # narration_audio_file = 'correct_test_files/raw_original_audio.wav'
 
-    with open('correct_test_files/original_script_data_th.json', "r", encoding="utf-8") as f:
-        original_script_content_data_json = json.load(f)
+    narration_audio_file = '___debug_dir/_d_audio_generation/narration_audio_sped_up_1.35x.mp3'
 
-    sub_debug_dir = "_d_mfa_pipeline"
-    full_debug_dir = set_debug_dir_for_module_of_pipeline(sub_debug_dir)
+    script_path = '___debug_dir/_d_script_generation/original_script_data.json'
 
-    if os.path.exists(narration_audio_file):
+
+    if os.path.exists(script_path) and os.path.exists(narration_audio_file):
+        with open(script_path, "r", encoding="utf-8") as f:
+            original_script_content_data_json = json.load(f)
+
+        sub_debug_dir = "_d_mfa_pipeline"
+        full_debug_dir = set_debug_dir_for_module_of_pipeline(sub_debug_dir)
+
         try:
+            script_text = original_script_content_data_json.get('script_text')
+
             aligned_transcript_word_and_time_data = run_mfa_pipeline(
-                raw_script_text_from_json=original_script_content_data_json['script_thai'],
+                raw_script_text_from_json=script_text,
                 audio_file_path=narration_audio_file,
                 output_dir=full_debug_dir,
             )
+
             print(f"✅ Transcription and Timestamp Alignment Complete: {len(aligned_transcript_word_and_time_data)} words aligned.\n")
 
         except Exception as e:
             print(f"❌ Alignment Failed: {e}")
-
     else:
-        raise Exception("!!! Raw audio file couldn't be found")
-
-
+        print("⚠️ Test files not found. Run previous steps first.")

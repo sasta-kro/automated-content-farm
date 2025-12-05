@@ -77,3 +77,37 @@ AUDIO_VOICE_MAPPING_EDGE = {
 
 # Prompt for Gemini Audio
 AUDIO_GEMINI_PROMPT_TEMPLATE = "Read this text realistically, naturally in {language} in an appropriate tone/energy for the script: {text}"
+
+
+
+
+# --- MFA / Tokenization Constants ---
+
+# Custom dictionary to prevent PyThaiNLP from splitting slang incorrectly
+MFA_THAI_SLANG_DICTIONARY = [
+    "อาบอบนวด",  # Brothel (Might get split into อา-บอบ-นวด)
+    "ป้ะ",       # Slang for "Right?"
+    "แกรร",      # Dragged out "Girl"
+    "พอดี",      # Sometimes splits if next to a name
+    "ช็อค",      # Shock
+    "แม่เจ้าโว้ย", # Exclamation
+
+    # General Emphasizers & Adjectives
+    "ฉ่ำ", "ของแทร่", "จึ้ง", "ตึ้ง", "เริ่ด", "ปัง", "นัมเบอร์วัน",
+    "เกินต้าน", "สุดเบอร์", "ยืนหนึ่ง", "ดือ", "ชื่นใจ", "ใจฟู",
+
+    # Actions & Reactions
+    "ช็อตฟีล", "แกง", "ป้ายยา", "ตำ", "บู้บี้", "หยุมหัว",
+    "มองบน", "พักก่อน", "จะเครซี่", "กำหมัด", "ทัวร์ลง",
+
+    # Person Types & Status
+    "ตัวแม่", "ตัวมารดา", "ตัวตึง", "ตัวลูก", "น้อน", "ต้าว",
+    "สลิ่ม", "สามกีบ", "ติ่ง", "เบียว",
+
+    # Feelings & Vibes
+    "นอยด์", "ฟิน", "บรอ", "โฮป", "อ่อม", "เกรี้ยวกราด",
+    "โป๊ะ", "เลิ่กลั่ก", "ตุย", "ขิต", "สู่ขิต",
+
+    # Context-Specific (Gaming/Streaming/Social)
+    "กาว", "เกลือ", "ขิง", "ด้อม", "เมพ", "นู้บ", "หัวร้อน"
+]
