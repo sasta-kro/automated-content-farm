@@ -25,29 +25,12 @@ EDGE_VOICES = {
     "F": "th-TH-PremwadeeNeural"
 }
 
-# 2. Gemini Voices (Experimental for Thai, Good for English)
+# 2. Gemini Voices
 # Mappings to closest "Dipper" and "Vega" equivalents
 GEMINI_VOICES = {
     "M": "Charon", # Deep, Storyteller (closest to Dipper)
     "F": "Aoede"   # Breezy, Confident (closest to Vega)
 }
-
-
-# ========================== Edge
-
-async def generate_with_edge_tts(text: str, gender: str, filename: str) -> str:
-    """
-    Generates audio using MS Edge TTS (Best for Thai).
-    """
-    voice = EDGE_VOICES.get(gender, "th-TH-PremwadeeNeural")
-    output_file_path = filename
-
-    # Adjusting rate for "TikTok Speed" (Thai speakers talk fast online)
-    communicate = edge_tts.Communicate(text, voice)
-
-    print(f" 🎙️ Audio Synthesizing (edge-tts) with {voice}...")
-    await communicate.save(output_file_path)
-    return output_file_path
 
 
 
@@ -122,45 +105,22 @@ async def generate_with_gemini(text: str, gender: str, filename: str):
         print(f"   ❌ Gemini TTS Failed: {e}")
 
 
-# ====================== Helper for the main wrapper function, to speed up the audio (i will use this later in the pipeline, need to refactor as well)
 
-async def speed_up_audio_with_ffmpeg(input_path: str, speed: float = 1.2) -> str:
+# ========================== Edge (just for backup)
+
+async def generate_with_edge_tts(text: str, gender: str, filename: str) -> str:
     """
-    Speeds up audio using ffmpeg-python without pitch shifting (No Chipmunk Effect).
+    Generates audio using MS Edge TTS (Best for Thai).
     """
-    # Determine TTS Model based on input string (not used anymore to make it easier to use the file name)
-    tts_model = "Unknown"
-    if "Gem" in input_path:   tts_model = "Gem"
-    elif "Edg" in input_path: tts_model = "Edg"
+    voice = EDGE_VOICES.get(gender, "th-TH-PremwadeeNeural")
+    output_file_path = filename
 
-    # rename output file
-    input_dir = os.path.dirname(input_path)
-    new_filename = f"spedup_audio_narration.mp3"
-    output_path = os.path.join(input_dir, new_filename)
+    # Adjusting rate for "TikTok Speed" (Thai speakers talk fast online)
+    communicate = edge_tts.Communicate(text, voice)
 
-    print(f"   ⏩ Speeding up audio by {int((speed-1)*100)}% (HQ MP3)...")
-
-    try:
-        # Build the FFmpeg stream graph
-        #    - input: load the file
-        #    - filter('atempo', speed): Speed up TEMPO only (maintains pitch)
-        #    - output: save as mp3 with 320k bitrate (High Quality)
-        stream = ffmpeg.input(input_path)
-        stream = ffmpeg.filter(stream, 'atempo', speed)
-        stream = ffmpeg.output(stream, output_path, **{'b:a': '320k'})
-
-        # Run it
-        #    overwrite_output=True adds the '-y' flag
-        #    quiet=True suppresses the huge wall of text logs
-        ffmpeg.run(stream, overwrite_output=True, quiet=True)
-        return output_path
-
-    except ffmpeg.Error as e:
-        print(f"   ❌ FFmpeg Error: {e.stderr.decode('utf8') if e.stderr else str(e)}")
-        return input_path
-    except Exception as e:
-        print(f"   ❌ General Error: {e}")
-        return input_path
+    print(f" 🎙️ Audio Synthesizing (edge-tts) with {voice}...")
+    await communicate.save(output_file_path)
+    return output_file_path
 
 
 
@@ -202,7 +162,7 @@ async def generate_audio_narration_file_th(
             filename= f"{filename}.wav"
         )
 
-    # Fallback or Default to EdgeTTS (or stop function)
+    # Fallback or Default to EdgeTTS
     if not use_gemini: # only print when gemini bool is set to true
         try:
             raw_audio_output_file = await generate_with_edge_tts(
@@ -225,9 +185,6 @@ async def generate_audio_narration_file_th(
 # ================ Execution
 
 if __name__ == "__main__":
-    # Test Data simulating script_generator output
-
-
 
     try:
         with open('___debug_generated_script/original_script_data_burmese.json', 'r') as f:
