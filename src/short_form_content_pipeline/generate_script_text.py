@@ -9,7 +9,7 @@ from pydantic import BaseModel, Field
 
 import json  # to parse json from gemini response
 
-from src.short_form_content_pipeline.Util_functions import save_json_file, set_debug_dir_for_modules_of_pipeline
+from src.short_form_content_pipeline.Util_functions import save_json_file, set_debug_dir_for_module_of_pipeline
 
 # Load API Key
 load_dotenv()
@@ -168,7 +168,7 @@ if __name__ == "__main__":
     # "random viral story" to let Gemini be creative
 
     sub_debug_dir = "_d_script_generation"
-    full_debug_dir = set_debug_dir_for_modules_of_pipeline(sub_debug_dir)
+    full_debug_dir = set_debug_dir_for_module_of_pipeline(sub_debug_dir)
 
     result = asyncio.run(
         generate_thai_script_data(

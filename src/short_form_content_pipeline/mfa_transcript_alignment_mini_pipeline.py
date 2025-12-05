@@ -7,7 +7,7 @@ import textgrid  # Assuming import
 from pythainlp import word_tokenize  # Assuming import
 from pythainlp.util import normalize, dict_trie # Assuming import
 
-from src.short_form_content_pipeline.Util_functions import save_json_file
+from src.short_form_content_pipeline.Util_functions import save_json_file, set_debug_dir_for_module_of_pipeline
 import difflib
 
 
@@ -286,19 +286,20 @@ def run_mfa_pipeline(
 
 
 if __name__ == "__main__":
-    narration_audio_file = 'correct_test_files/raw_original_audio_F_Gem.wav'
+    narration_audio_file = 'correct_test_files/raw_original_audio.wav'
 
     with open('correct_test_files/original_script_data_th.json', "r", encoding="utf-8") as f:
         original_script_content_data_json = json.load(f)
 
-    TEMP_PROCESSING_DIR = "___debug_mfa_pipeline"
+    sub_debug_dir = "_d_mfa_pipeline"
+    full_debug_dir = set_debug_dir_for_module_of_pipeline(sub_debug_dir)
 
     if os.path.exists(narration_audio_file):
         try:
             aligned_transcript_word_and_time_data = run_mfa_pipeline(
                 raw_script_text_from_json=original_script_content_data_json['script_thai'],
                 audio_file_path=narration_audio_file,
-                output_dir=TEMP_PROCESSING_DIR
+                output_dir=full_debug_dir,
             )
             print(f"✅ Transcription and Timestamp Alignment Complete: {len(aligned_transcript_word_and_time_data)} words aligned.\n")
 

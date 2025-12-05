@@ -53,7 +53,7 @@ def display_print_ffmpeg_metadata_parameters(ffmpeg_params):
 
 
 
-def set_debug_dir_for_modules_of_pipeline(sub_debug_dir):
+def set_debug_dir_for_module_of_pipeline(sub_debug_dir):
     """
     Appends the passed-in argument directory to the main debug directory of the pipeline,
     so that all the debug folders stay in one place instead of having 7 different folders

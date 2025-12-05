@@ -7,6 +7,8 @@ from moviepy.editor import TextClip, CompositeVideoClip, ColorClip, VideoFileCli
 from moviepy.video.VideoClip import ImageClip
 from moviepy.video.io.ffmpeg_tools import ffmpeg_merge_video_audio
 
+from src.short_form_content_pipeline.Util_functions import set_debug_dir_for_module_of_pipeline
+
 
 def _create_pil_text_clip(text, font_path, fontsize, color, stroke_color, stroke_width):
     """
@@ -59,7 +61,7 @@ def _create_pil_text_clip(text, font_path, fontsize, color, stroke_color, stroke
 
     return clip
 
-def generate_subtitle_clips_data(
+def generate_subtitle_clips_moviepy_obj(
         word_data_dict,
         videosize=(1080, 1920),
         font= "/Users/saiaikeshwetunaung/Documents/PythonProjects/Automated_content_farm/media_resources/thai_fonts/Prompt-Bold.ttf",
@@ -142,17 +144,18 @@ if __name__ == "__main__":
     with open("correct_test_files/mfa_aligned_transcript_data.json") as f:
         test_word_timestamp_data = json.load(f)
 
-    debug_directory = "___debug_generated_subtitle_clips"
+    sub_debug_dir = "_d_generate_moviepy_subtitle_clips"
+    full_debug_dir = set_debug_dir_for_module_of_pipeline(sub_debug_dir)
 
     # generate text clips
-    text_clips = generate_subtitle_clips_data(
+    text_clips = generate_subtitle_clips_moviepy_obj(
         word_data_dict=test_word_timestamp_data,
     )
 
     # create debug video
     _create_debug_subtitle_clip(
         TextClips_list=text_clips,
-        output_dir=debug_directory
+        output_dir=full_debug_dir
     )
 
 

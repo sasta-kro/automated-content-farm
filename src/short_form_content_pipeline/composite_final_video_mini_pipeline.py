@@ -6,7 +6,8 @@ import random
 import PIL.Image
 from moviepy.video.fx.speedx import speedx
 
-from src.short_form_content_pipeline.Util_functions import display_print_ffmpeg_metadata_parameters
+from src.short_form_content_pipeline.Util_functions import display_print_ffmpeg_metadata_parameters, \
+    set_debug_dir_for_module_of_pipeline
 
 # FIX: Register ANTIALIAS as LANCZOS for Pillow 10.x compatibility
 if not hasattr(PIL.Image, 'ANTIALIAS'):
@@ -14,10 +15,10 @@ if not hasattr(PIL.Image, 'ANTIALIAS'):
 
 import ffmpeg
 from moviepy.editor import VideoFileClip, CompositeVideoClip, AudioFileClip, TextClip
-from moviepy.video.fx.all import crop, resize, mirror_x
+from moviepy.video.fx.all import crop, resize, mirror_x # if the imports are red, it is fine to ignore
 
 
-from src.short_form_content_pipeline.generate_subtitle_clip import generate_subtitle_clips_data
+from src.short_form_content_pipeline.generate_subtitle_clip_moviepy import generate_subtitle_clips_moviepy_obj
 
 # ==========================================
 #        PRIVATE SUB-FUNCTIONS
@@ -367,15 +368,15 @@ if __name__ == "__main__":
 
     debug_audio_file = "correct_test_files/raw_original_audio.wav"
 
-    temp_processing_dir = "___debug_composite_final_video"
-    os.makedirs(temp_processing_dir, exist_ok=True) # create the folder
 
+    sub_debug_dir = "_d_composite_final_video_pipeline"
+    full_debug_dir = set_debug_dir_for_module_of_pipeline(sub_debug_dir)
 
     # load word data json file to generate transcript data
     with open("correct_test_files/mfa_aligned_transcript_data.json", 'r', encoding='utf-8') as f:
         aligned_word_data = json.load(f)
 
-    list_of_debug_moviepyTextClips = generate_subtitle_clips_data(
+    list_of_debug_moviepyTextClips = generate_subtitle_clips_moviepy_obj(
         word_data_dict=aligned_word_data
     )
 
@@ -383,8 +384,8 @@ if __name__ == "__main__":
         media_folder=MEDIA_RESOURCES_DIR,
         audio_file_path=debug_audio_file,
         subtitle_clips=list_of_debug_moviepyTextClips,
-        temp_processing_dir=temp_processing_dir,
-        output_dir=temp_processing_dir,  # this is fine since this is testing
+        temp_processing_dir=full_debug_dir,
+        output_dir=full_debug_dir,  # this is fine since this is testing
         final_speed_factor=1.3
     )
 
