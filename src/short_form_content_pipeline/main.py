@@ -2,9 +2,7 @@ import asyncio
 import json
 import os
 import subprocess
-
 import moviepy.video.fx.all as vfx
-
 
 from moviepy.video.io.VideoFileClip import VideoFileClip
 from moviepy.video.io.ffmpeg_tools import ffmpeg_merge_video_audio
@@ -12,32 +10,40 @@ from proglog.proglog import SETTINGS
 
 from src.short_form_content_pipeline.composite_final_video_mini_pipeline import run_composite_final_video_pipeline
 from src.short_form_content_pipeline.generate_audio_from_script import generate_audio_narration_file_th
-from src.short_form_content_pipeline.generate_script_text import generate_script_data_json, translate_thai_content_to_eng
+from src.short_form_content_pipeline.generate_script_text import generate_script_data_json, translate_text_to_eng
 from src.short_form_content_pipeline.generate_subtitle_clip_moviepy import generate_subtitle_clips_moviepy_obj, _create_debug_subtitle_clip
 from src.short_form_content_pipeline.mfa_transcript_alignment_mini_pipeline import run_mfa_pipeline
 
-## Define Directories and files
 
+""" ========== 0. Initialize Settings and Configurations =========="""
+from src.short_form_content_pipeline._CONFIG import SETTINGS
+SETTINGS.load_profile("thai_funny_story.yaml")
+
+# --- commonly used variables
+language = SETTINGS.content.language
+gemini_api_key = SETTINGS.GEMINI_API_KEY
+
+# ---  Define Directories and files
 # Get the directory where 'main.py' is actually located
 cwd_PIPELINE_DIR = os.path.dirname(os.path.abspath(__file__))
 
 # Name of the folder that have the temp working files
-TEMP_PROCESSING_DIR = "___0w0__temp_automation_workspace"
+TEMP_PROCESSING_DIR = SETTINGS.temp_processing_dir_name
 
 # Join it with the cwd so that the files won't be created in the project root
 TEMP_PROCESSING_DIR = os.path.join(cwd_PIPELINE_DIR, TEMP_PROCESSING_DIR)
 
-os.makedirs(TEMP_PROCESSING_DIR, exist_ok=True) # create the folder
+os.makedirs(TEMP_PROCESSING_DIR, exist_ok=True) # create the folder if it doesn't exist
 
 ## Media file path
-# Get the absolute path of the folder containing THIS script (src/v2_thai)
+# Get the absolute path of the folder containing THIS script (src/short_form...)
 this_script_dir = os.path.dirname(os.path.abspath(__file__))
 # Navigate up two levels to finding media_resources. `..` goes up one level. need do it twice.
 MEDIA_RESOURCES_DIR = os.path.join(this_script_dir, "..", "..", "media_resources")
 # Normalize the path to clean up any '..' (Optional but good for debugging)
 MEDIA_RESOURCES_DIR = os.path.normpath(MEDIA_RESOURCES_DIR)
 
-OUTPUT_DIR = ""
+OUTPUT_DIR = os.path.join(this_script_dir, SETTINGS.output_dir_name)
 
 
 def main():
@@ -45,33 +51,29 @@ def main():
     main entry point of the automated content farm
     """
 
-    """ ========== 0. Initialize Settings and Configurations =========="""
-    from src.short_form_content_pipeline._CONFIG import SETTINGS
-    SETTINGS.load_profile("thai_funny_story.yaml")
-
-
-
-
-
-
     """ ========== 1. Generate Script ====================="""
     # Use "random viral story" to let Gemini be creative
     original_script_content_data_json = asyncio.run(
         generate_script_data_json(
-            language=SETTINGS.content.language,
+            language=language,
             topic= SETTINGS.content.topic,
             time_length=SETTINGS.content.time_length,
             gemini_model_id=SETTINGS.content.script_ai_model,
-            gemini_api_key= SETTINGS.GEMINI_API_KEY,
+            gemini_api_key= gemini_api_key,
             temperature=SETTINGS.script_generation_temperature,
-            output_folder_path=SETTINGS.TEMP_PROCESSING_DIR,
+            output_folder_path=TEMP_PROCESSING_DIR,
         )
     )
 
     # translate to English so that I can understand
     if original_script_content_data_json is not None:
         asyncio.run(
-            translate_thai_content_to_eng(original_script_content_data_json)
+            translate_text_to_eng(
+                non_english_content=original_script_content_data_json,
+                language=language,
+                gemini_api_key=gemini_api_key,
+                gemini_model_id=SETTINGS.content.translation_ai_model,
+            )
         )
     else:
         print("❌ Script generation or translation failed. Stopping pipeline.")
@@ -80,10 +82,14 @@ def main():
 
     """ ========= 2. Generate Audio ===================== """
     narration_audio_file = asyncio.run(
-        generate_audio_narration_file_th(
+        generate_audio_narration_file(
             script_data=original_script_content_data_json,
             output_folder_path=TEMP_PROCESSING_DIR,
-            use_gemini=True
+            language=language,
+            tts_provider=SETTINGS.tts_provider,
+            gemini_api_key=gemini_api_key,
+            audio_ai_model=SETTINGS.audio.audio_ai_model,
+            speed_factor=SETTINGS.audio.audio_speed_factor,
         )
     )
 

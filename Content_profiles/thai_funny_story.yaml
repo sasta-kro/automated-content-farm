@@ -16,6 +16,7 @@ content:
   time_length: "25-35"
 
   script_ai_model: "gemini-2.5-pro"
+  translation_ai_model: "gemini-2.5-pro"
 
 audio:
   tts_provider: "gemini"   # or "edge-tts" (Gemini is way better)

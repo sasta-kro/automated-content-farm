@@ -27,6 +27,7 @@ class ContentSettings(BaseModel):
     topic: str
     time_length: str
     script_ai_model: str
+    translation_ai_model: str
 
 class AudioSettings(BaseModel):
     tts_provider: Literal["gemini", "edge-tts"]
@@ -53,10 +54,11 @@ class PipelineSettings(BaseModel):
 
 class Settings(BaseSettings):
 
-    # Infrastructure (Defaults)
+    # Infrastructure
     PROJECT_ROOT: str = PROJECT_ROOT_PATH
-    TEMP_PROCESSING_DIR: str = "___0w0__temp_automation_workspace"
-    OUTPUT_DIR: str = "Final_output_videos"
+    # these just decide the name of the folders, the pathing is handled in the main
+    temp_processing_dir_name: str = "___0w0__temp_automation_workspace"
+    output_dir_name: str = "Final_output_videos"
 
     # GenAI model settings
     script_generation_temperature: float = 1.25  # High temperature = more creative/drama

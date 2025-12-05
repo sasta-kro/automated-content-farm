@@ -111,7 +111,7 @@ async def generate_script_data_json(
 
 
 # for translation
-async def translate_thai_content_to_eng(
+async def translate_text_to_eng(
         non_english_content,
         language: str,
         gemini_api_key: str,
@@ -174,7 +174,7 @@ if __name__ == "__main__":
     # translate to English so that I can understand
     if result is not None:
         asyncio.run(
-            translate_thai_content_to_eng(
+            translate_text_to_eng(
                 non_english_content=result,
                 language="Thai",
                 gemini_api_key=SETTINGS.GEMINI_API_KEY,
