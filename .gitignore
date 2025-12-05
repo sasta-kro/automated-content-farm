@@ -17,8 +17,8 @@ venv/
 # secret local variables
 .env
 
-# testing stuff
-/test_pile
+# unused legacy code
+/src/legacy_code_archives/
 
 # resources
 /media_resources/
