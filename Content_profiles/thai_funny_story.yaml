@@ -35,6 +35,53 @@ visuals:
   stroke_width: 4
   stroke_color: "black"
 
+metadata:
+  # LOCATION: Assumption University (Hua Mak Campus) + Random Jitter
+  # Center coords: 13.7560° N, 100.6276° E
+  base_latitude: 13.7560
+  base_longitude: 100.6276
+
+  # this will create a circle around the base coords, where the random location will be
+  offset_radius_km: 1.0
+
+  location_eng_tag: "Bangkok, Thailand"
+
+  # for randomizing video creation time (between past bound and real creation)
+  creation_time_past_bound_hr: 120
+
+  editing_software_list:
+    # Apple Silicon Native
+    - "Adobe Premiere Pro 24.1 (Macintosh)"
+    - "DaVinci Resolve Studio 18.6 (Macintosh)"
+    - "Final Cut Pro 10.7 (Macintosh)"
+    - "CapCut for macOS 3.8.0"
+    - "iMovie 10.4 (Macintosh)"
+
+    # Android (mimicking mobile edit is safe, cuz hotspot)
+    - "CapCut 11.2.0 (Android)"
+    - "KineMaster 7.3 (Android)"
+    - "InShot Pro 1.9 (Android)"
+    - "VN Video Editor 2.2 (Android)"
+
+  editing_project_names:
+    - "Final Export"
+    - "My Video 1"
+    - "Project 3"
+    - "Vlog_Edit_Final"
+    - "Sequence 01"
+    - "TikTok_Export"
+    - "Reel_Draft_2"
+    - "Untitled Project"
+
+  android_models:
+    # High-end models common in TH that justify high-quality exports
+    - "Samsung Galaxy S24 Ultra"
+    - "Samsung Galaxy S23 Ultra"
+    - "Samsung Galaxy Z Flip5"
+    - "Google Pixel 8 Pro"
+    - "Xiaomi 13T Pro"
+    - "OPPO Find N3 Flip"
+
 pipeline:
   use_mfa_alignment: true
   clean_temp_0w0_after_run: false

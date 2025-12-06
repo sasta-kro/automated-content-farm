@@ -1,7 +1,8 @@
 import os
 
 import yaml
-from typing import Literal, Optional # import for the Optional to work (doesn't import automatically)
+from typing import Literal, Optional, List # import for the Optional to work (doesn't import automatically)
+
 from pydantic import BaseModel, Field
 from pydantic_settings import BaseSettings, SettingsConfigDict
 
@@ -43,6 +44,16 @@ class VisualSettings(BaseModel):
     stroke_width: int
     stroke_color: str
 
+class MetadataSettings(BaseModel):
+    base_latitude: float
+    base_longitude: float
+    offset_radius_km: float
+    location_eng_tag: str
+    creation_time_past_bound_hr: int
+    editing_software_list: List[str]    # YAML list -> Python List[str]
+    editing_project_names: List[str]
+    android_models: List[str]
+
 class PipelineSettings(BaseModel):
     use_mfa_alignment: bool
     clean_temp_0w0_after_run: bool
@@ -71,6 +82,7 @@ class Settings(BaseSettings):
     content: Optional[ContentSettings] = None
     audio: Optional[AudioSettings] = None
     visuals: Optional[VisualSettings] = None
+    metadata: Optional[MetadataSettings] = None
     pipeline: Optional[PipelineSettings] = None
 
     # Secrets (Loaded from .env file with Settings)
@@ -100,6 +112,7 @@ class Settings(BaseSettings):
         self.content = ContentSettings(**yaml_profile_data['content'])
         self.audio = AudioSettings(**yaml_profile_data['audio'])
         self.visuals = VisualSettings(**yaml_profile_data['visuals'])
+        self.metadata = MetadataSettings(**yaml_profile_data['metadata'])
         self.pipeline = PipelineSettings(**yaml_profile_data['pipeline'])
 
 # Initialize
