@@ -7,9 +7,6 @@ import textgrid  # Assuming import
 from pythainlp import word_tokenize  # Assuming import
 from pythainlp.util import normalize, dict_trie # Assuming import
 
-from src.short_form_content_pipeline.Util_functions import save_json_file, set_debug_dir_for_module_of_pipeline
-import difflib
-
 
 # Import Constants
 from src.short_form_content_pipeline._CONSTANTS import MFA_THAI_SLANG_DICTIONARY

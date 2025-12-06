@@ -1,8 +1,10 @@
 google-genai
 edge-tts
+pydantic
+pydantic-settings
+PyYAML
 moviepy==1.0.3
-openai-whisper
-pydub
+Pillow
 python-dotenv
 requests
 ffmpeg-python
