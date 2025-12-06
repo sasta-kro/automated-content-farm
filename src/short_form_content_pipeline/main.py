@@ -106,6 +106,7 @@ def main():
     """ =========== 4. Generate subtitle clips"""
     list_of_moviepyTextClips_sped_up = generate_speed_adjusted_subtitle_clips_moviepy_obj(
         word_data_for_normal_speed_dict=aligned_transcript_data_for_original_audio,
+        speed_factor=SETTINGS.audio.speed_factor,
         font_path=SETTINGS.visuals.font_name,
         fontsize=SETTINGS.visuals.font_size,
         color=SETTINGS.visuals.font_color,
