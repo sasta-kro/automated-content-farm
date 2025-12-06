@@ -11,6 +11,7 @@ from src.short_form_content_pipeline.composite_final_video_mini_pipeline import 
 from src.short_form_content_pipeline.generate_audio_from_script import generate_audio_narration_files
 from src.short_form_content_pipeline.generate_script_text import generate_script_data_json, translate_text_to_eng
 from src.short_form_content_pipeline.generate_subtitle_clip_moviepy import generate_speed_adjusted_subtitle_clips_moviepy_obj, _create_debug_subtitle_clip
+from src.short_form_content_pipeline.metadata_injector import inject_spoofed_metadata_into_video
 from src.short_form_content_pipeline.mfa_transcript_alignment_mini_pipeline import run_mfa_pipeline
 
 
@@ -125,9 +126,18 @@ def main():
     )
 
 
-    print(">>> ✅ Finished generating full video with subtitles, gameplay background, and sped-up audio :D")
+    print(">>> ✅ Finished generating full video with subtitles, gameplay background, and sped-up audio")
     print(f">>> Video file saved to {final_video_file_path} ")
 
+
+    """ ============ 6. Inject faked metadata"""
+    inject_spoofed_metadata_into_video(
+        SETTINGS_metadata=SETTINGS.metadata,
+        video_file_path=final_video_file_path,
+        temp_processing_dir=TEMP_PROCESSING_DIR,
+    )
+
+    print(f">>> ✅ Pipeline Complete. New Video file saved to {final_video_file_path} :D)")
 
 
 
