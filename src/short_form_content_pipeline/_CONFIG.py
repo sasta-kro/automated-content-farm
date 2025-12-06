@@ -35,8 +35,8 @@ class AudioSettings(BaseModel):
     speed_factor: float
 
 class VisualSettings(BaseModel):
-    bg_video_source_folder: str
-    font: str
+    media_source_folder: str
+    font_name: str
     font_size: int
     font_color: str
     stroke_width: int

@@ -10,17 +10,17 @@ from moviepy.video.io.ffmpeg_tools import ffmpeg_merge_video_audio
 from src.short_form_content_pipeline.Util_functions import set_debug_dir_for_module_of_pipeline
 
 
-def _create_pil_text_clip(text, font_path, fontsize, color, stroke_color, stroke_width):
+def _create_PIL_text_clip(text, font_path, fontsize, color, stroke_color, stroke_width):
     """
-    Generates a MoviePy ImageClip using Pillow for better font rendering (Thai support).
+    Generates a MoviePy ImageClip using Pillow for better font rendering (Thai and Complex language support).
     """
-    # 1. Load the font
+    # Load the font
     try:
         font = ImageFont.truetype(font_path, fontsize)
     except OSError:
         raise Exception(f"Could not load font at: {font_path}")
 
-    # 2. Calculate text size (using getbbox for accuracy with strokes)
+    # Calculate text size (using getbbox for accuracy with strokes)
     # Create a dummy image to calculate size
     dummy_img = Image.new('RGBA', (1, 1))
     draw = ImageDraw.Draw(dummy_img)
@@ -34,11 +34,11 @@ def _create_pil_text_clip(text, font_path, fontsize, color, stroke_color, stroke
     width = text_width + 20
     height = text_height + 20
 
-    # 3. Create the actual image with transparent background
+    # Create the actual image with transparent background
     img = Image.new('RGBA', (width, height), (255, 255, 255, 0))
     draw = ImageDraw.Draw(img)
 
-    # 4. Draw text (Center it in the image)
+    # Draw text (Center it in the image)
     # We offset by -left and -top to align the bounding box to 0,0 + padding
     x_pos = 10 - left
     y_pos = 10 - top
@@ -52,48 +52,50 @@ def _create_pil_text_clip(text, font_path, fontsize, color, stroke_color, stroke
         stroke_fill=stroke_color
     )
 
-    # 5. Convert to numpy array for MoviePy
+    # Convert to numpy array for MoviePy
     img_np = np.array(img)
 
-    # 6. Create ImageClip
+    # Create ImageClip
     # We set the duration later in the main loop
     clip = ImageClip(img_np)
 
     return clip
 
 def generate_subtitle_clips_moviepy_obj(
-        word_data_dict,
-        videosize=(1080, 1920),
-        font= "/Users/saiaikeshwetunaung/Documents/PythonProjects/Automated_content_farm/media_resources/thai_fonts/Prompt-Bold.ttf",
+        word_data_for_normal_speed_dict: list[dict],
 
-        fontsize=120,
-        color='yellow',     # Yellow is standard for Thai TikTok
-        stroke_width=4,
-        stroke_color='black',
+        # visual settings will be injected from config file and overwritten.
+        # The defaults are here because why not
+        font_path: str = "/Users/saiaikeshwetunaung/Developer/PythonProjects/Automated_content_farm/media_resources/thai_fonts/Prompt-Bold.ttf",
+        fontsize: int = 120,
+        color: str ='yellow',     # Yellow is standard for Thai TikTok
+        stroke_width: int = 4,
+        stroke_color: str = 'black',
 ):
     """
     Generates a list of TextClips based on word timings.
     """
-    print(f"4. 🎬 Generating {len(word_data_dict)} subtitle clips...")
+    print(f"4. 🎬 Generating {len(word_data_for_normal_speed_dict)} subtitle clips...")
 
     TextClips_list = []
+
     # Iterate through words
-    for item in word_data_dict:
+    for item in word_data_for_normal_speed_dict:
         word_text = item['word']
         start_time = item['start']
         end_time = item['end']
+        duration = end_time - start_time
 
         # Duration sanity check:
         # If a word is faster than 0.1s, it flickers too hard. We extend it slightly to make it readable.
-        duration = end_time - start_time
         if duration < 0.15:
             duration = 0.15
 
         # Create the clip
         try:
-            txt_clip = _create_pil_text_clip(
+            txt_clip = _create_PIL_text_clip(
                 text=word_text,
-                font_path=font,
+                font_path=font_path,
                 fontsize=fontsize,
                 color=color,
                 stroke_color=stroke_color,
@@ -116,7 +118,7 @@ def generate_subtitle_clips_moviepy_obj(
 
 def _create_debug_subtitle_clip(TextClips_list, output_dir=""):
     """
-    Creates a white video with subtitles to test font rendering.
+    Creates a white video with subtitles to test subtitle timing and font rendering.
     """
     W, H = 1080, 1920  # 9:16 Aspect Ratio (Vertical Video)
 
@@ -133,7 +135,7 @@ def _create_debug_subtitle_clip(TextClips_list, output_dir=""):
     filename = os.path.join(output_dir, "debug_test_subtitle_clip.mp4")
 
     print(f"   💾 Rendering debug video to {filename}...")
-    final_output.write_videofile(filename, fps=24)
+    final_output.write_videofile(filename, fps=30)
     return filename
 
 
@@ -141,7 +143,7 @@ def _create_debug_subtitle_clip(TextClips_list, output_dir=""):
 
 
 if __name__ == "__main__":
-    with open("correct_test_files/mfa_aligned_transcript_data.json") as f:
+    with open("___debug_dir/_d_mfa_pipeline/mfa_aligned_transcript_1x_speed_data.json") as f:
         test_word_timestamp_data = json.load(f)
 
     sub_debug_dir = "_d_generate_moviepy_subtitle_clips"
@@ -149,24 +151,29 @@ if __name__ == "__main__":
 
     # generate text clips
     text_clips = generate_subtitle_clips_moviepy_obj(
-        word_data_dict=test_word_timestamp_data,
+        word_data_for_normal_speed_dict=test_word_timestamp_data,
+        font_path="/Users/saiaikeshwetunaung/Developer/PythonProjects/Automated_content_farm/media_resources/thai_fonts/Prompt-Bold.ttf",
+        fontsize=120,
+        color='yellow',
+        stroke_width=4,
+        stroke_color='black',
     )
 
     # create debug video
-    _create_debug_subtitle_clip(
+    debug_subtitle_video = _create_debug_subtitle_clip(
         TextClips_list=text_clips,
         output_dir=full_debug_dir
     )
 
 
-    # # temp comment out to merge audio and video
-    # ffmpeg_merge_video_audio(
-    #     video=os.path.join(debug_directory, "debug_test_subtitle_clip.mp4"),
-    #     audio="correct_test_files/raw_original_audio.wav",
-    #     output=os.path.join(debug_directory, "debug_test_subtitles_vid_with_sound.mp4"),
-    #     vcodec='copy', # 'copy' means don't re-render video (Fast!)
-    #     acodec='aac', # audio codec
-    #     ffmpeg_output=False, # Hides logs
-    #     logger=None
-    # )
+    # temp comment out to merge audio and video
+    ffmpeg_merge_video_audio(
+        video=debug_subtitle_video,
+        audio="___debug_dir/_d_audio_generation/narration_audio_sped_up_1.3x.wav",
+        output=os.path.join(full_debug_dir, "debug_test_subtitles_vid_with_sound.mp4"),
+        vcodec='copy', # 'copy' means don't re-render video (Fast!)
+        acodec='aac', # audio codec
+        ffmpeg_output=False, # Hides logs
+        logger=None
+    )
     print(f"✅ Debug subtitle vid with sound ")

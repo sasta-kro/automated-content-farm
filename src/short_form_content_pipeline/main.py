@@ -9,7 +9,7 @@ from moviepy.video.io.ffmpeg_tools import ffmpeg_merge_video_audio
 from proglog.proglog import SETTINGS
 
 from src.short_form_content_pipeline.composite_final_video_mini_pipeline import run_composite_final_video_pipeline
-from src.short_form_content_pipeline.generate_audio_from_script import generate_audio_narration_file_th
+from src.short_form_content_pipeline.generate_audio_from_script import generate_audio_narration_files
 from src.short_form_content_pipeline.generate_script_text import generate_script_data_json, translate_text_to_eng
 from src.short_form_content_pipeline.generate_subtitle_clip_moviepy import generate_subtitle_clips_moviepy_obj, _create_debug_subtitle_clip
 from src.short_form_content_pipeline.mfa_transcript_alignment_mini_pipeline import run_mfa_pipeline
@@ -81,42 +81,48 @@ def main():
 
 
     """ ========= 2. Generate Audio ===================== """
-    narration_audio_file = asyncio.run(
-        generate_audio_narration_file(
+    normal_speed_audio_file, sped_up_audio_file = asyncio.run(
+        generate_audio_narration_files(
             script_data=original_script_content_data_json,
             output_folder_path=TEMP_PROCESSING_DIR,
             language=language,
-            tts_provider=SETTINGS.tts_provider,
+            tts_provider=SETTINGS.audio.tts_provider,
             gemini_api_key=gemini_api_key,
             audio_ai_model=SETTINGS.audio.audio_ai_model,
-            speed_factor=SETTINGS.audio.audio_speed_factor,
+            speed_factor=SETTINGS.audio.speed_factor,
         )
     )
 
 
     """ ========== 3. Generate transcript with timestamps for dynamic video subtitles via MFA"""
 
-    aligned_transcript_word_and_time_data = run_mfa_pipeline(
-        raw_script_text_from_json=original_script_content_data_json.get('script_thai'),
-        audio_file_path=narration_audio_file,
+    aligned_transcript_data_for_original_audio = run_mfa_pipeline(
+        raw_script_text_from_json=original_script_content_data_json.get('script_text'),
+        original_speed_audio_file_path=normal_speed_audio_file,
         output_dir=TEMP_PROCESSING_DIR
     )
 
 
     """ =========== 4. Generate subtitle clips"""
-    list_of_moviepyTextClips = generate_subtitle_clips_moviepy_obj(
-        word_data_dict=aligned_transcript_word_and_time_data,
+    list_of_moviepyTextClips_1x_speed = generate_subtitle_clips_moviepy_obj(
+        word_data_for_normal_speed_dict=aligned_transcript_data_for_original_audio,
+        font_path=SETTINGS.visuals.font_name,
+        fontsize=SETTINGS.visuals.font_size,
+        color=SETTINGS.visuals.font_color,
+        stroke_width=SETTINGS.visuals.stroke_width,
+        stroke_color=SETTINGS.visuals.stroke_color
     )
 
 
-    """ =========== 5. Generate The Final Video with Subtitles and Background, along with Sped up Audio  """
+    """ =========== 5. Generate The Final Video with Subtitles and Background, combined with Sped up Audio  """
     final_video_file_path = run_composite_final_video_pipeline(
         media_folder=MEDIA_RESOURCES_DIR,
-        audio_file_path=narration_audio_file,
-        subtitle_clips=list_of_moviepyTextClips,
+        normal_speed_audio_file_path=narration_audio_file,
+        sped_up_audio_file_path=sped_up_audio_file,
+        speed_factor=SETTINGS.audio.speed_factor,
+        subtitle_clips_1x_speed=list_of_moviepyTextClips_1x_speed,
         temp_processing_dir=TEMP_PROCESSING_DIR,
-        output_dir=TEMP_PROCESSING_DIR,  # where the output video will resulp in
-        final_speed_factor=1.3
+        output_dir=OUTPUT_DIR,  # where the output video will end up in
     )
 
 

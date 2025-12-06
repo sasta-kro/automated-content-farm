@@ -197,9 +197,15 @@ def _repair_unknown_tokens(raw_extracted_mfa_data_json: list[dict]):
     """
     # deep copy since i want the unmodified data to preserve
     repaired_mfa_data_json = copy.deepcopy(raw_extracted_mfa_data_json)
+
+    unknown_token_count = 0
+
     for segment in repaired_mfa_data_json:
         if segment.get("word") == "<unk>":
             segment["word"] = ""
+            unknown_token_count += 1
+
+    print(f"    {unknown_token_count} unknown tokens (<unk>) found. {round(unknown_token_count/len(raw_extracted_mfa_data_json), 2)}% of words were <unk>.")
 
     return repaired_mfa_data_json
 
@@ -211,7 +217,7 @@ def _repair_unknown_tokens(raw_extracted_mfa_data_json: list[dict]):
 
 def run_mfa_pipeline(
         raw_script_text_from_json: str,
-        audio_file_path: str,
+        original_speed_audio_file_path: str,
         output_dir: str,
         mfa_cmd="mfa"
 ):
@@ -221,6 +227,7 @@ def run_mfa_pipeline(
     """
 
     print("3. 📝 Generating Transcript with word and timestamps for subtitles...")
+    print(f"    script: {raw_script_text_from_json[:70]}...")
 
     # Setup Environment
     mfa_input_dir, mfa_output_dir = _setup_mfa_directories(output_dir=output_dir)
@@ -231,7 +238,7 @@ def run_mfa_pipeline(
 
     # 3. Stage files for mfa (check function description for more info)
     _stage_audio_and_script_files_for_mfa(
-        audio_file_path=audio_file_path,
+        audio_file_path=original_speed_audio_file_path,
         tokenized_text=tokenized_clean_script_text,
         mfa_input_dir=mfa_input_dir,
     )
@@ -252,7 +259,7 @@ def run_mfa_pipeline(
     # 7. Save json data as a file for inspection
     save_json_file(
         dict_or_json_data=repaired_aligned_transcript_data,
-        json_file_name_path=os.path.join(output_dir, "mfa_aligned_transcript_data.json")
+        json_file_name_path=os.path.join(output_dir, "mfa_aligned_transcript_1x_speed_data.json")
     )
 
     print(f"✅ Transcription and Timestamp Alignment Complete: {len(repaired_aligned_transcript_data)} words aligned.\n")
@@ -268,7 +275,7 @@ def run_mfa_pipeline(
 if __name__ == "__main__":
     # narration_audio_file = 'correct_test_files/raw_original_audio.wav'
 
-    narration_audio_file = '___debug_dir/_d_audio_generation/narration_audio_sped_up_1.35x.mp3'
+    narration_audio_file = '___debug_dir/_d_audio_generation/raw_original_audio_1x.wav'
 
     script_path = '___debug_dir/_d_script_generation/original_script_data.json'
 
@@ -285,7 +292,7 @@ if __name__ == "__main__":
 
             aligned_transcript_word_and_time_data = run_mfa_pipeline(
                 raw_script_text_from_json=script_text,
-                audio_file_path=narration_audio_file,
+                original_speed_audio_file_path=narration_audio_file,
                 output_dir=full_debug_dir,
             )
 

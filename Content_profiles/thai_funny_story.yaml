@@ -13,6 +13,7 @@ content:
     spicy cheating story that got karma
 
   # this should be a range of time (seconds) written in string format
+  # Warning: the original audio file tend to be 2x the time. E.g., ask for 30 second=60 second audio
   time_length: "25-35"
 
   script_ai_model: "gemini-2.5-pro"
@@ -23,11 +24,11 @@ audio:
 
   audio_ai_model: "gemini-2.5-flash-preview-tts"
 
-  speed_factor: 1.32                       # Brainrot speed (1.35 is too fast)
+  speed_factor: 1.3                       # Brainrot speed (1.35 is too fast)
 
 visuals:
-  bg_video_source_folder: "media_resources"
-  font: "Prompt-Bold.ttf"
+  media_source_folder: "media_resources"
+  font_name: "Prompt-Bold.ttf"
   font_size: 120                 # Thai needs slightly smaller font than Eng usually
   font_color: "yellow"            # Yellow is standard for Thai TikTok
   stroke_width: 4

@@ -44,7 +44,7 @@ def _scan_media_folder(folder_path, minimum_time_s: float=90, allowed_exts=('.we
                 probe = ffmpeg.probe(full_path)
                 duration = float(probe['format']['duration'])
 
-                # Only accept videos longer than 2 minutes to ensure we have wiggle room
+                # Only accept videos longer than the requested minimum
                 if duration > minimum_time_s:
                     valid_videos.append({'path': full_path, 'duration': duration})
             except Exception as e:
@@ -272,11 +272,12 @@ def _generate_organic_metadata_params():
 
 def run_composite_final_video_pipeline(
         media_folder,
-        audio_file_path,
-        subtitle_clips,
+        normal_speed_audio_file_path,
+        sped_up_audio_file_path,
+        speed_factor: float,
+        subtitle_clips_1x_speed,
         temp_processing_dir,
         output_dir,
-        final_speed_factor=1.3
 ):
     """
     Orchestrator to build the final vertical video.
@@ -284,8 +285,8 @@ def run_composite_final_video_pipeline(
     print("\n5. 🏗️ Assembling Final Video...")
 
     # Get audio duration (needed for BG video selection)
-    # using a context manager or close immediately to free the file handle (idk what this means)
-    with AudioFileClip(audio_file_path) as temp_clip:
+    # using a context manager to ensure file handles are closed immediately
+    with AudioFileClip(normal_speed_audio_file_path) as temp_clip:
         original_audio_duration = temp_clip.duration
 
     # Select bg video & Prepare background clip (1x normal speed at first)
@@ -303,28 +304,24 @@ def run_composite_final_video_pipeline(
     # Mute Background Video (setting audio to None first to remove game sounds)
     background_clip = background_clip.without_audio()
 
-    # Composite BG and Subtitles
+    # Composite BG and Subtitles (at 1x speed first)
     # background is at bottom, subs on top
-    bg_and_subtitles_clip_normal_speed = CompositeVideoClip([background_clip] + subtitle_clips)
-
-
-    # Prepare Final Audio & Sync Factor
-    sped_up_audio_clip, sync_speed_factor = _prepare_final_audio_and_sync_factor(
-        original_audio_path=audio_file_path,
-        output_dir=temp_processing_dir,
-        target_speed_factor=final_speed_factor,
-        original_duration=original_audio_duration
+    bg_and_subtitles_clip_1x_speed = CompositeVideoClip(
+        [background_clip] + subtitle_clips_1x_speed
     )
 
+
     # Apply Speed Effects to Video
-    if sync_speed_factor != 1.0:
-        final_composite_video = bg_and_subtitles_clip_normal_speed.fx(speedx, factor=sync_speed_factor)
+    if speed_factor != 1.0:
+        final_composite_video = bg_and_subtitles_clip_1x_speed.fx(speedx, factor=speed_factor)
     else:
-        final_composite_video = bg_and_subtitles_clip_normal_speed
+        final_composite_video = bg_and_subtitles_clip_1x_speed
 
+    # Load the sped-up audio file
+    sped_up_audio_clip = AudioFileClip(sped_up_audio_file_path)
 
-    # Merge video & audio and render
-    # trim any tiny floating point excesses to match audio exactly
+    # Merge the just sped-up video & pre-sped-up audio
+    # trim any tiny floating point excesses to match audio exactly to avoid black frames at end
     final_composite_video = final_composite_video.set_duration(sped_up_audio_clip.duration)
     final_composite_video = final_composite_video.set_audio(sped_up_audio_clip)
 
@@ -336,8 +333,8 @@ def run_composite_final_video_pipeline(
     final_output_video_file_name = os.path.join(output_dir, f"FINAL_UPLOAD_READY_{timestamp_for_video}.mp4")
 
 
-    ffmpeg_organic_params = _generate_organic_metadata_params()
-    display_print_ffmpeg_metadata_parameters(ffmpeg_organic_params)  # for the pretty prints
+    # ffmpeg_organic_params = _generate_organic_metadata_params()
+    # display_print_ffmpeg_metadata_parameters(ffmpeg_organic_params)  # for the pretty prints
 
     final_composite_video.write_videofile(
         filename=final_output_video_file_name,
@@ -346,7 +343,7 @@ def run_composite_final_video_pipeline(
         audio_codec='aac',
         threads=4,
         logger='bar',
-        ffmpeg_params=ffmpeg_organic_params
+        # ffmpeg_params=ffmpeg_organic_params
     )
 
     print(f"\n🎉 VIDEO GENERATION COMPLETE: {final_output_video_file_name}")
@@ -359,34 +356,36 @@ def run_composite_final_video_pipeline(
 if __name__ == "__main__":
 
 
-    # Get the absolute path of the folder containing THIS script (src/v2_thai)
+    # Get the absolute path of the folder containing THIS script (src/xxx)
     this_script_dir = os.path.dirname(os.path.abspath(__file__))
     # Navigate up two levels to finding media_resources. `..` goes up one level. need do it twice.
     MEDIA_RESOURCES_DIR = os.path.join(this_script_dir, "..", "..", "media_resources")
     # Normalize the path to clean up any '..' (Optional but good for debugging)
     MEDIA_RESOURCES_DIR = os.path.normpath(MEDIA_RESOURCES_DIR)
 
-    debug_audio_file = "correct_test_files/raw_original_audio.wav"
+    debug_audio_dir = "___debug_dir/_d_audio_generation"
+    debug_audio_file_1x_speed = os.path.join(debug_audio_dir, "raw_original_audio_1x.wav")
+    debug_audio_file_sped_up = os.path.join(debug_audio_dir, "narration_audio_sped_up_1.3x.wav")
 
-
-    sub_debug_dir = "_d_composite_final_video_pipeline"
-    full_debug_dir = set_debug_dir_for_module_of_pipeline(sub_debug_dir)
+    sub_debug_dir_for_this = "_d_composite_final_video_pipeline"
+    full_debug_dir = set_debug_dir_for_module_of_pipeline(sub_debug_dir_for_this)
 
     # load word data json file to generate transcript data
-    with open("correct_test_files/mfa_aligned_transcript_data.json", 'r', encoding='utf-8') as f:
+    with open("___debug_dir/_d_mfa_pipeline/mfa_aligned_transcript_1x_speed_data.json", 'r', encoding='utf-8') as f:
         aligned_word_data = json.load(f)
 
     list_of_debug_moviepyTextClips = generate_subtitle_clips_moviepy_obj(
-        word_data_dict=aligned_word_data
+        word_data_for_normal_speed_dict=aligned_word_data
     )
 
     final_video_path = run_composite_final_video_pipeline(
         media_folder=MEDIA_RESOURCES_DIR,
-        audio_file_path=debug_audio_file,
-        subtitle_clips=list_of_debug_moviepyTextClips,
+        normal_speed_audio_file_path=debug_audio_file_1x_speed,
+        sped_up_audio_file_path=debug_audio_file_sped_up,
+        speed_factor=1.3,
+        subtitle_clips_1x_speed=list_of_debug_moviepyTextClips,
         temp_processing_dir=full_debug_dir,
         output_dir=full_debug_dir,  # this is fine since this is testing
-        final_speed_factor=1.3
     )
 
 

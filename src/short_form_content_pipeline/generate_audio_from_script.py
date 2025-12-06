@@ -16,7 +16,7 @@ from src.short_form_content_pipeline.Util_functions import set_debug_dir_for_mod
 
 # ==================== Audio Processing (FFmpeg) ====================
 
-def change_audio_speed(
+def _change_audio_speed(
         input_path: str,
         output_path: str,
         speed_factor: float
@@ -50,7 +50,7 @@ def change_audio_speed(
 
 # ==================== Gemini Generator ====================
 
-async def generate_with_gemini(
+async def _generate_with_gemini(
         text: str,
         gender: str,
         language: str,
@@ -127,7 +127,7 @@ async def generate_with_gemini(
 
 # ==================== Edge TTS Generator (just for backup) ====================
 
-async def generate_with_edge_tts(
+async def _generate_with_edge_tts(
         text: str,
         gender: str,
         language: str,
@@ -151,7 +151,7 @@ async def generate_with_edge_tts(
 
 # ==================== Main wrapper function ====================
 
-async def generate_audio_narration_file(
+async def generate_audio_narration_files(
         script_data: dict,
         output_folder_path: str,
 
@@ -165,11 +165,11 @@ async def generate_audio_narration_file(
     """
     Main entry point for audio generation.
     1. Generates Raw Audio (Normal Speed).
-    2. Processes Speed with FFmpeg (speed up).
-    3. Returns path to Final Audio.
+    2. Processes Speed with FFmpeg (speed up) and generate sped up audio.
+    3. Returns path to raw normal speed audio and Final sped up Audio
 
     script_data (dict): From script_generator.py (must contain 'script_text' and 'gender')
-    output_folder_path: where the output audio file will be stored in
+    output_folder_path: where the output audio files will be stored in
     """
     print("2. 🔊 Starting Audio Generation...")
 
@@ -182,7 +182,7 @@ async def generate_audio_narration_file(
 
     # Prepare Filenames
     # no extension yet. Extension will be added later since edge gives mp3 and gemini give wav
-    base_name = "raw_original_audio"
+    base_name = "raw_original_audio_1x"
 
     # joined with the output folder
     raw_path_no_ext = os.path.join(output_folder_path, base_name)
@@ -191,7 +191,7 @@ async def generate_audio_narration_file(
 
     # --- Generation Phase ---
     if tts_provider == "gemini":
-        normal_audio_file_path = await generate_with_gemini(
+        normal_audio_file_path = await _generate_with_gemini(
             text=text,
             gender=gender,
             language=language,
@@ -202,7 +202,7 @@ async def generate_audio_narration_file(
 
     # Fallback / Default to Edge
     if not normal_audio_file_path or tts_provider == "edge-tts":
-        normal_audio_file_path = await generate_with_edge_tts(
+        normal_audio_file_path = await _generate_with_edge_tts(
             text=text, gender=gender, language=language, filename=raw_path_no_ext + ".mp3"
         )
 
@@ -213,19 +213,19 @@ async def generate_audio_narration_file(
 
     # --- Processing audio (Speed Up) ---
     if speed_factor > 1.0:
-        final_filename = f"narration_audio_sped_up_{speed_factor}x.mp3"
+        final_filename = f"narration_audio_sped_up_{speed_factor}x.wav"
         final_spedup_audio_output_path = os.path.join(output_folder_path, final_filename)
 
         # Run FFmpeg helper function
-        change_audio_speed(
+        _change_audio_speed(
             input_path=normal_audio_file_path,
             output_path=final_spedup_audio_output_path,
             speed_factor=speed_factor)
 
-        return final_spedup_audio_output_path
+        return normal_audio_file_path, final_spedup_audio_output_path
     else:
         # If speed is 1.0, just return the raw file
-        return normal_audio_file_path
+        return normal_audio_file_path, normal_audio_file_path
 
 
 # ================ Testing
@@ -250,7 +250,7 @@ if __name__ == "__main__":
     full_debug_dir = set_debug_dir_for_module_of_pipeline(sub_debug_dir)
 
 
-    final_audio = asyncio.run(   generate_audio_narration_file(
+    final_audio = asyncio.run(   generate_audio_narration_files(
         script_data=script_data_json,
         output_folder_path=full_debug_dir,
         # Inject from SETTINGS
