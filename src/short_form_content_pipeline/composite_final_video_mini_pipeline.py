@@ -18,7 +18,7 @@ from moviepy.editor import VideoFileClip, CompositeVideoClip, AudioFileClip, Tex
 from moviepy.video.fx.all import crop, resize, mirror_x # if the imports are red, it is fine to ignore
 
 
-from src.short_form_content_pipeline.generate_subtitle_clip_moviepy import generate_subtitle_clips_moviepy_obj
+from src.short_form_content_pipeline.generate_subtitle_clip_moviepy import generate_speed_adjusted_subtitle_clips_moviepy_obj
 
 # ==========================================
 #        PRIVATE SUB-FUNCTIONS
@@ -99,7 +99,7 @@ def _prepare_background_clip(video_info, target_duration, target_resolution=(108
     # Load only the specific chunk to save memory
     clip = VideoFileClip(vid_path).subclip(start_time, end_time)
 
-    # Mirror Flip (Anti-Copyright Technique #1)
+    # Mirror Flip (Anti-Copyright Technique)
     # Randomly decide to flip or not (adds more variance)
     if random.choice([True, False]):
         clip = mirror_x(clip)
@@ -118,151 +118,6 @@ def _prepare_background_clip(video_info, target_duration, target_resolution=(108
 
     return clip_final
 
-def _create_sped_up_audio_file(original_audio_input_path, output_dir, speed_factor):
-    """
-    Uses FFmpeg 'atempo' to create a high-quality sped-up audio file.
-    Returns the duration of the new file for precise syncing, and file path
-    Returns: (output_file_path, new_duration)
-    """
-    print(f"   🔊 Generating sped-up audio ({speed_factor}x)...")
-
-    # extracting extension from the original audio (.mp3, .wav)
-    _, audio_extension = os.path.splitext(original_audio_input_path)
-
-    # Calculate filter string. 'atempo' only accepts 0.5 to 2.0.
-    # If speed > 2.0, we would need to chain them, but for 1.3 it's fine.
-    sped_up_audio_file_path = os.path.join(
-        output_dir, f"sped up {speed_factor} audio{audio_extension}"
-    )
-
-
-    try:
-        stream = ffmpeg.input(original_audio_input_path)
-        stream = ffmpeg.filter(stream, 'atempo', speed_factor)
-
-        # Note: 'b:a': '192k' sets bitrate. If using WAV, FFmpeg usually ignores this and defaults to PCM (lossless)
-        out = ffmpeg.output(stream, sped_up_audio_file_path, **{'b:a': '192k'})
-        ffmpeg.run(out, overwrite_output=True, quiet=True)
-
-        # Get exact duration of new file for precision sync
-        probe = ffmpeg.probe(sped_up_audio_file_path)
-        new_duration = float(probe['format']['duration'])
-        return sped_up_audio_file_path, new_duration
-
-    except ffmpeg.Error as e:
-        print(f"   ❌ Audio Speedup Failed: {e.stderr.decode('utf8')}")
-        raise e
-
-
-def _prepare_final_audio_and_sync_factor(original_audio_path, output_dir, target_speed_factor, original_duration):
-    """
-    Handles audio speedup logic.
-    Returns: (AudioFileClip object, float sync_factor)
-    """
-    # Case A: No speed up needed
-    if target_speed_factor == 1.0:
-        print("   🔊 Audio speed is 1.0x (No change).")
-        return AudioFileClip(original_audio_path), 1.0
-
-    # Case B: Speed up required
-    sped_up_audio_path, new_duration = _create_sped_up_audio_file(
-        original_audio_input_path=original_audio_path,
-        output_dir=output_dir,
-        speed_factor=target_speed_factor
-    )
-
-    # Calculate Precision Sync Factor
-    # We use the ratio of (Old / New) to ensure the video stretches exactly to the audio's end
-    sync_factor = original_duration / new_duration
-
-    return AudioFileClip(sped_up_audio_path), sync_factor
-
-
-def _generate_organic_metadata_params():
-    """
-    Generates FFmpeg flags to make the video file appear to have been
-    created by a human editor at a specific location in Thailand (AU),
-    using various software, sometime in the last 10 days.
-    """
-    params = []
-
-    # CLEANING: Strip original metadata
-    # This removes the 'original' camera data from the source clips
-    params.extend(["-map_metadata", "-1"])
-
-    # LOCATION: Assumption University (Suvarnabhumi Campus) + Random Jitter
-    # Center coords: 13.6121° N, 100.8369° E
-    # 1km is roughly 0.009 degrees lat/lon in Thailand
-    base_lat = 13.6121
-    base_lon = 100.8369
-
-    # Random offset between -1km and +1km
-    lat_offset = random.uniform(-0.009, 0.009)
-    lon_offset = random.uniform(-0.009, 0.009)
-
-    final_lat = base_lat + lat_offset
-    final_lon = base_lon + lon_offset
-
-    # Format as ISO 6709: +13.6121+100.8369/
-    location_string = f"{final_lat:+.4f}{final_lon:+.4f}/"
-    params.extend(["-metadata", f"location={location_string}"])
-
-    if random.random() > 0.5:
-        params.extend(["-metadata", "location-eng=Bangkok, Thailand"])
-    else:
-        params.extend(["-metadata", "location-eng=Bang Sao Thong, Samut Prakan"])
-
-
-    # TIME: Random creation time (Now minus 0 to 240 hours)
-    seconds_back = random.randint(0, 240 * 3600)
-    fake_creation_dt = datetime.datetime.now() - datetime.timedelta(seconds=seconds_back)
-    fake_creation_str = fake_creation_dt.strftime("%Y-%m-%d %H:%M:%S")
-
-    params.extend(["-metadata", f"creation_time={fake_creation_str}"])
-
-    # SOFTWARE SPOOFING: Hide the fact that this is Python/FFmpeg
-    # We rotate through common "Human" video editors so not every file looks identical.
-    human_editors = [
-        "Adobe Premiere Pro 2023.0 (Windows)",
-        "DaVinci Resolve Studio 18.5",
-        "CapCut for Windows 2.5.0",
-        "Final Cut Pro 10.6.5",
-        "Sony Vegas Pro 20.0",
-
-        # Mobile (Android/iOS style signatures)
-        "CapCut 9.6.0 (Android)",
-        "InShot Pro 1.952.1415 (Android)",
-        "KineMaster 7.2.5.30855.GP",
-        "VN Video Editor 2.1.5 (iOS)",
-        "Splice - Video Editor & Maker 5.1 (iOS)"
-    ]
-    fake_software = random.choice(human_editors)
-
-    # Note: 'encoder' tag often persists as Lavf in stream info, but 'tool'
-    # or 'software' tags in the container can be overwritten.
-    params.extend(["-metadata", f"encoder={fake_software}"])
-    params.extend(["-metadata", f"software={fake_software}"])
-    params.extend(["-metadata", f"comment=Rendered at {fake_creation_str}"])
-
-
-    # Project Name metadata (names usually look like "Final", "Edit 2", "Project 4", etc.)
-    project_names = ["Final Cut", "Vlog_Export", "Project 1", "My Video", "Edit_v2", "Render 1"]
-    fake_title = random.choice(project_names)
-    params.extend(["-metadata", f"title={fake_title}"])
-
-    # If it's a mobile editor, often 'make' and 'model' tags persist from the phone
-    if "Android" in fake_software or "iOS" in fake_software:
-        phones = [("Apple", "iPhone 14 Pro"), ("Samsung", "Galaxy S23 Ultra"), ("Google", "Pixel 7")]
-        make, model = random.choice(phones)
-        params.extend(["-metadata", f"make={make}"])
-        params.extend(["-metadata", f"model={model}"])
-
-    # STRUCTURE: Web Optimization
-    # This moves the MOOV atom to the front (faststart).
-    # Almost all 'human' export settings check this box for web compatibility.
-    params.extend(["-movflags", "+faststart"])
-
-    return params
 
 
 
@@ -274,8 +129,8 @@ def run_composite_final_video_pipeline(
         media_folder,
         normal_speed_audio_file_path,
         sped_up_audio_file_path,
-        speed_factor: float,
-        subtitle_clips_1x_speed,
+        bg_video_speed_factor: float,
+        subtitle_clips_speed_adjusted,
         temp_processing_dir,
         output_dir,
 ):
@@ -304,18 +159,14 @@ def run_composite_final_video_pipeline(
     # Mute Background Video (setting audio to None first to remove game sounds)
     background_clip = background_clip.without_audio()
 
-    # Composite BG and Subtitles (at 1x speed first)
+    # Apply speed adjustment ONLY to the background clip since the subtitles are already sped up
+    background_clip_speed_adjusted = background_clip.fx(speedx, factor=bg_video_speed_factor)
+
+    # Composite BG and Subtitles (both at the same speed now)
     # background is at bottom, subs on top
-    bg_and_subtitles_clip_1x_speed = CompositeVideoClip(
-        [background_clip] + subtitle_clips_1x_speed
+    final_composite_video = CompositeVideoClip(
+        [background_clip_speed_adjusted] + subtitle_clips_speed_adjusted
     )
-
-
-    # Apply Speed Effects to Video
-    if speed_factor != 1.0:
-        final_composite_video = bg_and_subtitles_clip_1x_speed.fx(speedx, factor=speed_factor)
-    else:
-        final_composite_video = bg_and_subtitles_clip_1x_speed
 
     # Load the sped-up audio file
     sped_up_audio_clip = AudioFileClip(sped_up_audio_file_path)
@@ -332,18 +183,13 @@ def run_composite_final_video_pipeline(
     timestamp_for_video = datetime.datetime.now().strftime("%Y%m%d_%H%M%S")  # first datetime is module name, 2nd datetime is class name
     final_output_video_file_name = os.path.join(output_dir, f"FINAL_UPLOAD_READY_{timestamp_for_video}.mp4")
 
-
-    # ffmpeg_organic_params = _generate_organic_metadata_params()
-    # display_print_ffmpeg_metadata_parameters(ffmpeg_organic_params)  # for the pretty prints
-
     final_composite_video.write_videofile(
         filename=final_output_video_file_name,
         fps=30,
-        codec='libx264',
+        codec='h264_videotoolbox',
         audio_codec='aac',
         threads=4,
         logger='bar',
-        # ffmpeg_params=ffmpeg_organic_params
     )
 
     print(f"\n🎉 VIDEO GENERATION COMPLETE: {final_output_video_file_name}")
@@ -374,16 +220,17 @@ if __name__ == "__main__":
     with open("___debug_dir/_d_mfa_pipeline/mfa_aligned_transcript_1x_speed_data.json", 'r', encoding='utf-8') as f:
         aligned_word_data = json.load(f)
 
-    list_of_debug_moviepyTextClips = generate_subtitle_clips_moviepy_obj(
-        word_data_for_normal_speed_dict=aligned_word_data
+    list_of_debug_moviepyTextClips = generate_speed_adjusted_subtitle_clips_moviepy_obj(
+        word_data_for_normal_speed_dict=aligned_word_data,
+        speed_factor=1.3
     )
 
     final_video_path = run_composite_final_video_pipeline(
         media_folder=MEDIA_RESOURCES_DIR,
         normal_speed_audio_file_path=debug_audio_file_1x_speed,
         sped_up_audio_file_path=debug_audio_file_sped_up,
-        speed_factor=1.3,
-        subtitle_clips_1x_speed=list_of_debug_moviepyTextClips,
+        bg_video_speed_factor=1.3,
+        subtitle_clips_speed_adjusted=list_of_debug_moviepyTextClips,
         temp_processing_dir=full_debug_dir,
         output_dir=full_debug_dir,  # this is fine since this is testing
     )

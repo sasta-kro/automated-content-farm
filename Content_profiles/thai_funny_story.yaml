@@ -28,6 +28,7 @@ audio:
 
 visuals:
   media_source_folder: "media_resources"
+  bg_video_speed_factor: 1.3
   font_name: "Prompt-Bold.ttf"
   font_size: 120                 # Thai needs slightly smaller font than Eng usually
   font_color: "yellow"            # Yellow is standard for Thai TikTok

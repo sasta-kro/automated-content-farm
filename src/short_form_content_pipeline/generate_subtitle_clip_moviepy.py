@@ -61,8 +61,9 @@ def _create_PIL_text_clip(text, font_path, fontsize, color, stroke_color, stroke
 
     return clip
 
-def generate_subtitle_clips_moviepy_obj(
+def generate_speed_adjusted_subtitle_clips_moviepy_obj(
         word_data_for_normal_speed_dict: list[dict],
+        speed_factor: float,
 
         # visual settings will be injected from config file and overwritten.
         # The defaults are here because why not
@@ -73,23 +74,27 @@ def generate_subtitle_clips_moviepy_obj(
         stroke_color: str = 'black',
 ):
     """
-    Generates a list of TextClips based on word timings.
+    Generates a list of TextClips based on word timings and adjust timing if audio is sped up.
     """
-    print(f"4. 🎬 Generating {len(word_data_for_normal_speed_dict)} subtitle clips...")
+    print(f"4. 🎬 Generating {len(word_data_for_normal_speed_dict)} subtitle clips (Speed Adj: {speed_factor}x)...")
 
     TextClips_list = []
 
     # Iterate through words
     for item in word_data_for_normal_speed_dict:
         word_text = item['word']
-        start_time = item['start']
-        end_time = item['end']
+
+        # --- TIMING ADJUSTMENT ---
+        # If audio is 1.3x faster, the word happens at T / 1.3
+        start_time = item['start'] / speed_factor
+        end_time = item['end'] / speed_factor
+
         duration = end_time - start_time
 
-        # Duration sanity check:
+        # Duration sanity check: ()
         # If a word is faster than 0.1s, it flickers too hard. We extend it slightly to make it readable.
-        if duration < 0.15:
-            duration = 0.15
+        # if duration < 0.15:
+        #     duration = 0.15
 
         # Create the clip
         try:
@@ -103,7 +108,7 @@ def generate_subtitle_clips_moviepy_obj(
             )
 
         except Exception as e:
-            print(f"❌ Font Error: {e}")
+            print(f"❌ Font Error ({word_text}): {e}")
             raise e
 
         # Position: Center of the screen
@@ -150,8 +155,9 @@ if __name__ == "__main__":
     full_debug_dir = set_debug_dir_for_module_of_pipeline(sub_debug_dir)
 
     # generate text clips
-    text_clips = generate_subtitle_clips_moviepy_obj(
+    text_clips = generate_speed_adjusted_subtitle_clips_moviepy_obj(
         word_data_for_normal_speed_dict=test_word_timestamp_data,
+        speed_factor=1.3,
         font_path="/Users/saiaikeshwetunaung/Developer/PythonProjects/Automated_content_farm/media_resources/thai_fonts/Prompt-Bold.ttf",
         fontsize=120,
         color='yellow',

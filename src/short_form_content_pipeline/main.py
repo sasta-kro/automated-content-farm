@@ -6,12 +6,11 @@ import moviepy.video.fx.all as vfx
 
 from moviepy.video.io.VideoFileClip import VideoFileClip
 from moviepy.video.io.ffmpeg_tools import ffmpeg_merge_video_audio
-from proglog.proglog import SETTINGS
 
 from src.short_form_content_pipeline.composite_final_video_mini_pipeline import run_composite_final_video_pipeline
 from src.short_form_content_pipeline.generate_audio_from_script import generate_audio_narration_files
 from src.short_form_content_pipeline.generate_script_text import generate_script_data_json, translate_text_to_eng
-from src.short_form_content_pipeline.generate_subtitle_clip_moviepy import generate_subtitle_clips_moviepy_obj, _create_debug_subtitle_clip
+from src.short_form_content_pipeline.generate_subtitle_clip_moviepy import generate_speed_adjusted_subtitle_clips_moviepy_obj, _create_debug_subtitle_clip
 from src.short_form_content_pipeline.mfa_transcript_alignment_mini_pipeline import run_mfa_pipeline
 
 
@@ -104,7 +103,7 @@ def main():
 
 
     """ =========== 4. Generate subtitle clips"""
-    list_of_moviepyTextClips_1x_speed = generate_subtitle_clips_moviepy_obj(
+    list_of_moviepyTextClips_sped_up = generate_speed_adjusted_subtitle_clips_moviepy_obj(
         word_data_for_normal_speed_dict=aligned_transcript_data_for_original_audio,
         font_path=SETTINGS.visuals.font_name,
         fontsize=SETTINGS.visuals.font_size,
@@ -117,10 +116,10 @@ def main():
     """ =========== 5. Generate The Final Video with Subtitles and Background, combined with Sped up Audio  """
     final_video_file_path = run_composite_final_video_pipeline(
         media_folder=MEDIA_RESOURCES_DIR,
-        normal_speed_audio_file_path=narration_audio_file,
+        normal_speed_audio_file_path=normal_speed_audio_file,
         sped_up_audio_file_path=sped_up_audio_file,
-        speed_factor=SETTINGS.audio.speed_factor,
-        subtitle_clips_1x_speed=list_of_moviepyTextClips_1x_speed,
+        bg_video_speed_factor=SETTINGS.visuals.bg_video_speed_factor,
+        subtitle_clips_speed_adjusted=list_of_moviepyTextClips_sped_up,
         temp_processing_dir=TEMP_PROCESSING_DIR,
         output_dir=OUTPUT_DIR,  # where the output video will end up in
     )
@@ -137,4 +136,3 @@ def main():
 # ======== EXECUTION =====
 if __name__ == "__main__":
     main()
-    # TODO: change font, fix sped-up error
