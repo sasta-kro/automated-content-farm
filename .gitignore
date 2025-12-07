@@ -22,3 +22,6 @@ venv/
 
 # resources
 /media_resources/
+
+# my personal customized profiles
+/Content_profiles/
