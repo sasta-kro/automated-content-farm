@@ -44,6 +44,7 @@ MEDIA_RESOURCES_DIR = os.path.join(this_script_dir, "..", "..", "media_resources
 MEDIA_RESOURCES_DIR = os.path.normpath(MEDIA_RESOURCES_DIR)
 
 OUTPUT_DIR = os.path.join(this_script_dir, SETTINGS.output_dir_name)
+os.makedirs(OUTPUT_DIR, exist_ok=True) # create the folder if it doesn't exist
 
 
 def main():
