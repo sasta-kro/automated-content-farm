@@ -12,7 +12,7 @@ This project is not a simple automation script; it is a **production-grade distr
 
 ---
 
-## 🚀 Engineering Challenges & Solutions (Why this matters)
+## ⚙️ Engineering Challenges & Solutions (Why this matters)
 
 Most automation tools fail when applied to the Thai language due to its unique linguistic properties. This system overcomes those limitations through custom engineering:
 
