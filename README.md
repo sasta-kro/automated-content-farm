@@ -8,7 +8,7 @@
 
 An end-to-end **Algorithmic Media Engine** engineered to autonomously produce viral short-form video content tailored for the Thai demographic.
 
-This project is not a simple automation script; it is a **production-grade distributed pipeline** that orchestrates Large Language Models (LLMs), Neural Text-to-Speech, Phonetic Alignment engines, and complex programmatic video compositing. It solves high-barrier engineering challenges regarding **non-Latin script rendering**, **audio signal processing**, and **algorithmic anti-fingerprinting**.
+This project is not just a simple automation script, it is a **production-grade distributed pipeline** that orchestrates Large Language Models (LLMs), Neural Text-to-Speech, Phonetic Alignment engines, and complex programmatic video compositing. It solves high-barrier engineering challenges regarding **non-Latin script rendering**, **audio signal processing**, and **algorithmic anti-fingerprinting**.
 
 ---
 
@@ -104,7 +104,7 @@ Loads profiles into a strictly typed Pydantic object, ensuring runtime safety.
 
 ---
 
-## 💻 Installation & Usage
+## Installation & Usage
 
 *Note: This project is optimized for macOS (Apple Silicon) due to specific compiled library requirements for Thai rendering.*
 
@@ -116,10 +116,10 @@ Loads profiles into a strictly typed Pydantic object, ensuring runtime safety.
 
 2.  **Setup:**
     ```bash
-    # 1. Install Dependencies
+    # Install Dependencies
     pip install -r requirements.txt
 
-    # 2. Setup MFA Environment
+    # Setup MFA Environment
     conda create -n mfa montreal-forced-aligner
     mfa model download dictionary thai_mfa
     mfa model download acoustic thai_mfa
