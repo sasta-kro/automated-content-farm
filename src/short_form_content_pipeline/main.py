@@ -23,7 +23,7 @@ SETTINGS.load_profile("thai_funny_story.yaml")
 language = SETTINGS.content.language
 gemini_api_key = SETTINGS.GEMINI_API_KEY
 
-# ---  Define Directories and files
+# --- Directories and files
 # Get the directory where 'main.py' is actually located
 cwd_PIPELINE_DIR = os.path.dirname(os.path.abspath(__file__))
 
@@ -35,12 +35,12 @@ TEMP_PROCESSING_DIR = os.path.join(cwd_PIPELINE_DIR, TEMP_PROCESSING_DIR)
 
 os.makedirs(TEMP_PROCESSING_DIR, exist_ok=True) # create the folder if it doesn't exist
 
-## Media file path
-# Get the absolute path of the folder containing THIS script (src/short_form...)
+# Media file path
+# absolute path of the folder containing this script (src/short_form...)
 this_script_dir = os.path.dirname(os.path.abspath(__file__))
-# Navigate up two levels to finding media_resources. `..` goes up one level. need do it twice.
+# navigate up two levels to finding media_resources. `..` goes up one level. need do it twice.
 MEDIA_RESOURCES_DIR = os.path.join(this_script_dir, "..", "..", "media_resources")
-# Normalize the path to clean up any '..' (Optional but good for debugging)
+# normalize the path to clean up any '..' (optional but good for debugging)
 MEDIA_RESOURCES_DIR = os.path.normpath(MEDIA_RESOURCES_DIR)
 
 OUTPUT_DIR = os.path.join(this_script_dir, SETTINGS.output_dir_name)

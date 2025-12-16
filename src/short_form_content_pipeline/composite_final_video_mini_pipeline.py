@@ -9,7 +9,7 @@ from moviepy.video.fx.speedx import speedx
 from src.short_form_content_pipeline.Util_functions import display_print_ffmpeg_metadata_parameters, \
     set_debug_dir_for_module_of_pipeline
 
-# FIX: Register ANTIALIAS as LANCZOS for Pillow 10.x compatibility
+# important: register ANTIALIAS as LANCZOS for Pillow 10.x compatibility
 if not hasattr(PIL.Image, 'ANTIALIAS'):
     PIL.Image.ANTIALIAS = PIL.Image.LANCZOS
 
@@ -99,7 +99,7 @@ def _prepare_background_clip(video_info, target_duration, target_resolution=(108
     # Load only the specific chunk to save memory
     clip = VideoFileClip(vid_path).subclip(start_time, end_time)
 
-    # Mirror Flip (Anti-Copyright Technique)
+    # Mirror Flip
     # Randomly decide to flip or not (adds more variance)
     if random.choice([True, False]):
         clip = mirror_x(clip)
@@ -181,7 +181,7 @@ def run_composite_final_video_pipeline(
 
     # Generate timestamp: YearMonthDay_HourMinuteSecond (e.g., 20231203_193045) to put at the end of a file name
     timestamp_for_video = datetime.datetime.now().strftime("%Y%m%d_%H%M%S")  # first datetime is module name, 2nd datetime is class name
-    final_output_video_file_name = os.path.join(output_dir, f"FINAL_UPLOAD_READY_{timestamp_for_video}.mp4")
+    final_output_video_file_name = os.path.join(output_dir, f"UploadReady_{timestamp_for_video}.mp4")
 
     final_composite_video.write_videofile(
         filename=final_output_video_file_name,

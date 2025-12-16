@@ -36,7 +36,7 @@ async def generate_script_data_json(
     Returns: JSON with title_text, script_text, and gender
     """
 
-    # Define the output schema using Pydantic for strict typing
+    # Defining the output schema using Pydantic for strict typing
     # (inside the function so that it gets the `language` argument
     class ScriptOutputData(BaseModel):
         title_text: str = Field(description=f"A catchy, clickbait title in {language} for the video cover")
