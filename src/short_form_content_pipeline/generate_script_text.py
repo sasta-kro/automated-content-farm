@@ -142,7 +142,7 @@ async def translate_text_to_eng(
         translated_title: str
         translated_script: str
         translated_description: str
-        translated_hashtags: list[str]
+        translated_hashtags: str
 
 
     prompt = SCRIPT_TRANSLATION_PROMPT.format(
@@ -157,7 +157,7 @@ async def translate_text_to_eng(
             # This enables the thinking capability, good for translating nuances
             thinking_config=types.ThinkingConfig(
                 # include_thoughts=True, # Returns the 'thoughts' in the response
-                thinking_budget=2000   # Token budget for thinking (1024 is a good start)
+                thinking_budget=1024   # Token budget for thinking (1024 is a good start)
             ),
 
             response_mime_type="application/json", # forces json response
@@ -190,7 +190,7 @@ if __name__ == "__main__":
     result = asyncio.run(
         generate_script_data_json(
             language="Thai",
-            topic=  "tripped and fell onto dog poop", #"caught boyfriend cheating with my mother",
+            topic=  "tripped and fell face onto dog poop", #"caught boyfriend cheating with my mother",
             time_length="25-35",
             gemini_model_id="gemini-flash-latest",
             gemini_api_key= SETTINGS.GEMINI_API_KEY,

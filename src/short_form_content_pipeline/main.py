@@ -69,6 +69,9 @@ def main():
         )
     )
 
+    # patch work to use when the script is pre generated
+    # original_script_content_data_json = json.load(open("src/short_form_content_pipeline/___0w0__temp_automation_workspace/original_script_data.json"))
+
     # translate to English so that I can understand
     if original_script_content_data_json is not None:
         translated_script_content_data_json = asyncio.run(

@@ -42,6 +42,8 @@ def _change_audio_speed(
         stream = ffmpeg.output(stream, output_path)
         ffmpeg.run(stream, overwrite_output=True, quiet=True)
 
+        print("   Speed-up complete!\n")
+
         return output_path
 
     except ffmpeg.Error as e:
@@ -201,10 +203,10 @@ async def generate_audio_narration_files(
         )
 
     # Fallback / Default to Edge
-    if not normal_audio_file_path or tts_provider == "edge-tts":
-        normal_audio_file_path = await _generate_with_edge_tts(
-            text=text, gender=gender, language=language, filename=raw_path_no_ext + ".mp3"
-        )
+    # if not normal_audio_file_path or tts_provider == "edge-tts":
+    #     normal_audio_file_path = await _generate_with_edge_tts(
+    #         text=text, gender=gender, language=language, filename=raw_path_no_ext + ".mp3"
+    #     )
 
     if not normal_audio_file_path or not os.path.exists(normal_audio_file_path):
         raise RuntimeError("❌ Audio generation failed. Audio file cannot be found or not generated.")
