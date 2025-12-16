@@ -7,6 +7,7 @@ import moviepy.video.fx.all as vfx
 from moviepy.video.io.VideoFileClip import VideoFileClip
 from moviepy.video.io.ffmpeg_tools import ffmpeg_merge_video_audio
 
+from src.short_form_content_pipeline.Util_functions import save_json_file
 from src.short_form_content_pipeline.composite_final_video_mini_pipeline import run_composite_final_video_pipeline
 from src.short_form_content_pipeline.generate_audio_from_script import generate_audio_narration_files
 from src.short_form_content_pipeline.generate_script_text import generate_script_data_json, translate_text_to_eng
@@ -43,7 +44,9 @@ MEDIA_RESOURCES_DIR = os.path.join(this_script_dir, "..", "..", "media_resources
 # normalize the path to clean up any '..' (optional but good for debugging)
 MEDIA_RESOURCES_DIR = os.path.normpath(MEDIA_RESOURCES_DIR)
 
-OUTPUT_DIR = os.path.join(this_script_dir, SETTINGS.output_dir_name)
+OUTPUT_DIR = str(
+    os.path.join(this_script_dir, SETTINGS.output_dir_name)
+)
 os.makedirs(OUTPUT_DIR, exist_ok=True) # create the folder if it doesn't exist
 
 
@@ -68,7 +71,7 @@ def main():
 
     # translate to English so that I can understand
     if original_script_content_data_json is not None:
-        asyncio.run(
+        translated_script_content_data_json = asyncio.run(
             translate_text_to_eng(
                 non_english_content=original_script_content_data_json,
                 language=language,
@@ -80,6 +83,14 @@ def main():
         print("❌ Script generation or translation failed. Stopping pipeline.")
         return
 
+    # save the json for posting later
+    thai_and_english_script_data_json = {
+        "thai": original_script_content_data_json,
+        "english": translated_script_content_data_json,
+    }
+
+    vid_description_json_full_path = os.path.join(OUTPUT_DIR, "thai_and_english_script_data.json")
+    save_json_file(thai_and_english_script_data_json, vid_description_json_full_path)
 
     """ ========= 2. Generate Audio ===================== """
     normal_speed_audio_file, sped_up_audio_file = asyncio.run(

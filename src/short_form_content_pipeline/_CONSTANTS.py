@@ -33,13 +33,31 @@ If the topic is "random", invent a viral-worthy story (e.g., cheating, office dr
 Determine the most appropriate gender for the narrator based on the story 
 (e.g., cheating boyfriend story -> Female narrator 'F', going to brothel and ended up with ladyboy -> Male narrator 'M').
 
+
+OUTPUT REQUIREMENTS:
+- Title: Clickbaity, super eye-catching, stops the scroller, can use slang.
+- Script: The actual spoken narration.
+- Gender: The narrator's gender (male or female) depending on the script and based on the story.
+- Description: Entertaining, summarizes the conflict but DOES NOT spoil the ending, can use slang
+- Hashtags: Mix of broad and niche tags.
+
+
 OUTPUT FORMAT:
 Return strictly raw JSON. Do not use Markdown code blocks.
 {{
-    "title_text": "Catchy headline in {language} for the cover",
+    "title_text": "Catchy and clickbait headline/video title in {language} to stop the viewer to watch, but not too spoilery",
     "script_text": "The full spoken script in {language}...",
     "gender": "F"
+    "description_text": "Hooking description to put in post's description in {language} with the same energy (natural slang) of the script (No Spoilers but still draws the viewer!)",
+    "hashtags": "#tag1 #tag2 #tag3 ..."
 }}
+
+EXAMPLE:
+"title_text": "พีคที่สุดในชีวิต! วินาทีวิกฤตในห้องน้ำปั๊ม... ทำเรื่องงามหน้าจนไม่กล้าสู้หน้าใคร 💀"
+"script_text": "The full spoken script in {language}...",
+"gender": "M"
+"description_text": อายจนอยากมุดแผ่นดินหนี! 😱 เรื่องมันมีอยู่ว่า... ข้าศึกบุกประชิดประตูเมืองแบบกะทันหัน! วิ่งหน้าตั้งเข้าห้องน้ำปั๊มแต่... เต็มทุกห้อง! \nนาทีนั้นคือหน้ามืดตามัว สติสตังไปหมดแล้วครับ จะราดตรงนั้นก็ไม่ได้ เลยตัดสินใจแก้ปัญหาด้วยวิธีที่... (คิดแล้วยังสยอง) 😭 แต่จุดพีคคือจังหวะ "โบ๊ะบ๊ะ" ตอนจบที่มีคุณลุงเดินเข้ามาเห็นผลงานผมนี่สิ! สายตาที่แกมองมาทำเอาผมจำไปจนวันตาย... ใครเคยกั้นไม่ไหวจนทำเรื่องพีคๆ บ้าง สารภาพมา! 👇"
+"hashtags": "#เล่าเรื่อง #เรื่องพีค #ประสบการณ์ชีวิต #เรื่องฮา #ขายขำ #ห้องน้ำปั๊ม #อายหนักมาก #เรื่องเล่า"
 """
 
 SCRIPT_TRANSLATION_PROMPT = """
@@ -52,10 +70,21 @@ INPUT DATA:
 {content_data}
 
 CRITICAL INSTRUCTIONS:
-1. The translation must match the energy of the source. If the {language} text is gossipy  (e.g. Thai -> "Mao Moi"), dramatic, or uses slang  (e.g. Thai -> "Gae", "Pirood", "Peak"), the English must use equivalent Internet slang. The same goes for other languages and their respective slang. 
-2. Pay attention to the 'gender' field. If 'F', use feminine/bestie slang if appropriate. If 'M', adjust accordingly.
-3. No Censorship of Vibe: Keep exclamation marks, caps, and the chaotic energy of the original post.
-4. Do not output conversational filler.
+- The translation must match the energy of the source. If the {language} text is gossipy  (e.g. Thai -> "Mao Moi"), dramatic, or uses slang  (e.g. Thai -> "Gae", "Pirood", "Peak"), the English must use equivalent Internet slang. The same goes for other languages and their respective slang. 
+- You must return a JSON object containing the translated versions of the input fields.
+- Pay attention to the 'gender' field. If 'F', use feminine/bestie slang if appropriate. If 'M', adjust accordingly.
+- Ensure the English description remains spoiler-free if the original was.
+- No Censorship of Vibe: Keep exclamation marks, caps, and the chaotic energy of the original post.
+- Do not output conversational filler.
+
+OUTPUT FORMAT:
+Return strictly raw JSON.
+{{
+    "translated_title": "...",
+    "translated_script": "...",
+    "translated_description": "...",
+    "translated_hashtags": "#... #... #..."
+}}
 """
 
 
