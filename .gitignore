@@ -19,6 +19,11 @@ venv/
 
 # unused legacy code
 /src/_legacy_code_archives/
+/src/_project_unrelated_utils/
+src/short_form_content_pipeline/___0w0__temp_automation_workspace/
+src/short_form_content_pipeline/___debug_dir
+src/short_form_content_pipeline/correct_test_files
+src/short_form_content_pipeline/Final_output_videos
 
 # resources
 /media_resources/
