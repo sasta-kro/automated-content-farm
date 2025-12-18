@@ -26,6 +26,7 @@ class ContentSettings(BaseModel):
     theme_for_persona: str
     language: str
     topic: str
+    brief_topic_description: str
     time_length: str
     script_ai_model: str
     translation_ai_model: str

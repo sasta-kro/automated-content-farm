@@ -132,6 +132,7 @@ def run_composite_final_video_pipeline(
         bg_video_speed_factor: float,
         subtitle_clips_speed_adjusted,
         temp_processing_dir,
+        brief_video_description,
         output_dir,
 ):
     """
@@ -181,7 +182,7 @@ def run_composite_final_video_pipeline(
 
     # Generate timestamp: YearMonthDay_HourMinuteSecond (e.g., 20231203_193045) to put at the end of a file name
     timestamp_for_video = datetime.datetime.now().strftime("%Y%m%d_%H%M%S")  # first datetime is module name, 2nd datetime is class name
-    final_output_video_file_name = os.path.join(output_dir, f"UploadReady_{timestamp_for_video}.mp4")
+    final_output_video_file_name = os.path.join(output_dir, f"UploadReady_{timestamp_for_video}_{brief_video_description}.mp4")
 
     final_composite_video.write_videofile(
         filename=final_output_video_file_name,

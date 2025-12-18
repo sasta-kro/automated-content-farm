@@ -138,6 +138,7 @@ def main():
         bg_video_speed_factor=SETTINGS.visuals.bg_video_speed_factor,
         subtitle_clips_speed_adjusted=list_of_moviepyTextClips_sped_up,
         temp_processing_dir=TEMP_PROCESSING_DIR,
+        brief_video_description=SETTINGS.content.brief_video_description,
         output_dir=OUTPUT_DIR,  # where the output video will end up in
     )
 
