@@ -39,6 +39,10 @@ SCRIPT_GEN_USER_PROMPT = """
 Generate a script for a short video about: "{topic}".
 If the topic is "random", invent a viral-worthy story (e.g., cheating, office drama, lottery, ghost, revenge) and make it unhinged 
 
+If the context is too foreign, localize it to fit and make it more relatable to {language} people. 
+(e.g., For Thai, Walmart -> 7-eleven, Karen woman -> Manood Pa, etc.)
+Or keep it unlocalized if the context is relevant for that culture. (E.g, Situationships, FWB, are relatable to both Thai and English speaking people)
+
 Determine the most appropriate gender for the narrator based on the story 
 (e.g., cheating boyfriend story -> Female narrator 'F', going to brothel and ended up with ladyboy -> Male narrator 'M').
 
@@ -105,7 +109,8 @@ Return strictly raw JSON.
 # Mappings to closest "Dipper" and "Vega" equivalents
 AUDIO_VOICE_MAPPING_GEMINI = {
     "M": "Charon", # Deep, Storyteller
-    "F": "Aoede"   # Breezy, Confident
+    # "F": "Aoede"   # Breezy, Confident
+    "F": "Zephyr" # Bright, Higher pitch (seems good with at least 1.25x)
 }
 
 # Edge TTS (backup)
@@ -116,8 +121,12 @@ AUDIO_VOICE_MAPPING_EDGE = {
 
 
 # Prompt for Gemini Audio
-AUDIO_GEMINI_PROMPT_TEMPLATE = "Read this text realistically, naturally in {language} in an appropriate tone/energy for the script: {text}"
+AUDIO_GEMINI_PROMPT_TEMPLATE = """
+Read this text realistically, naturally in {language} in an appropriate tone/energy for the script: {text}.
+If the script is in the style of a funny story, match the narrator theme accordingly (Tone: Unhinged, Hyper-casual, Gossipy, High Energy. Like ranting to a close friend)
 
+"""
+# TODO: i kinda hardcoded the audio generation prompt rn
 
 
 

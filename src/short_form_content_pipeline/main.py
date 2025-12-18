@@ -69,7 +69,7 @@ def main():
         )
     )
 
-    # patch work to use when the script is pre generated
+    # patch work to use when the thai script is pre generated (to save generation token)
     # original_script_content_data_json = json.load(open("src/short_form_content_pipeline/___0w0__temp_automation_workspace/original_script_data.json"))
 
     # translate to English so that I can understand
@@ -86,14 +86,21 @@ def main():
         print("❌ Script generation or translation failed. Stopping pipeline.")
         return
 
-    # save the json for posting later
+    # Saving the json for posting later
     thai_and_english_script_data_json = {
         "thai": original_script_content_data_json,
         "english": translated_script_content_data_json,
     }
 
-    vid_description_json_full_path = os.path.join(OUTPUT_DIR, "thai_and_english_script_data.json")
+    vid_description_json_full_path = os.path.join(
+        OUTPUT_DIR,
+        f"thai_and_english_script_data_{SETTINGS.content.brief_topic_description}.json"
+    )
     save_json_file(thai_and_english_script_data_json, vid_description_json_full_path)
+
+    # patch work to use when the whole script data is pre generated (to save generation token)
+    # vid_description_json_full_path = json.load(open("src/short_form_content_pipeline/Final_output_videos/thai_and_english_script_data.json"))
+
 
     """ ========= 2. Generate Audio ===================== """
     normal_speed_audio_file, sped_up_audio_file = asyncio.run(
@@ -138,7 +145,7 @@ def main():
         bg_video_speed_factor=SETTINGS.visuals.bg_video_speed_factor,
         subtitle_clips_speed_adjusted=list_of_moviepyTextClips_sped_up,
         temp_processing_dir=TEMP_PROCESSING_DIR,
-        brief_video_description=SETTINGS.content.brief_video_description,
+        brief_video_description=SETTINGS.content.brief_topic_description,
         output_dir=OUTPUT_DIR,  # where the output video will end up in
     )
 
