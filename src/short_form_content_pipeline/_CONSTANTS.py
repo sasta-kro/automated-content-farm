@@ -123,7 +123,7 @@ AUDIO_VOICE_MAPPING_EDGE = {
 # Prompt for Gemini Audio
 AUDIO_GEMINI_PROMPT_TEMPLATE = """
 Read this text realistically, naturally in {language} in an appropriate tone/energy for the script: {text}.
-If the script is in the style of a funny story, match the narrator theme accordingly (Tone: Unhinged, Hyper-casual, Gossipy, High Energy. Like ranting to a close friend)
+If the script is in the style of a funny story, match the narrator theme accordingly (Tone: Unhinged, Hyper-casual, Gossipy, High Energy. Like ranting dramatically to a close friend)
 
 """
 # TODO: i kinda hardcoded the audio generation prompt rn

@@ -56,49 +56,49 @@ def main():
     """
 
     """ ========== 1. Generate Script ====================="""
-    # Use "random viral story" to let Gemini be creative
-    original_script_content_data_json = asyncio.run(
-        generate_script_data_json(
-            language=language,
-            topic= SETTINGS.content.topic,
-            time_length=SETTINGS.content.time_length,
-            gemini_model_id=SETTINGS.content.script_ai_model,
-            gemini_api_key= gemini_api_key,
-            temperature=SETTINGS.script_generation_temperature,
-            output_folder_path=TEMP_PROCESSING_DIR,
-        )
-    )
+    # # Use "random viral story" to let Gemini be creative
+    # original_script_content_data_json = asyncio.run(
+    #     generate_script_data_json(
+    #         language=language,
+    #         topic= SETTINGS.content.topic,
+    #         time_length=SETTINGS.content.time_length,
+    #         gemini_model_id=SETTINGS.content.script_ai_model,
+    #         gemini_api_key= gemini_api_key,
+    #         temperature=SETTINGS.script_generation_temperature,
+    #         output_folder_path=TEMP_PROCESSING_DIR,
+    #     )
+    # )
 
-    # patch work to use when the thai script is pre generated (to save generation token)
-    # original_script_content_data_json = json.load(open("src/short_form_content_pipeline/___0w0__temp_automation_workspace/original_script_data.json"))
+    # PATCH work to use when the thai script is pre generated (to save generation token)
+    original_script_content_data_json = json.load(open("src/short_form_content_pipeline/___0w0__temp_automation_workspace/original_script_data.json"))
 
-    # translate to English so that I can understand
-    if original_script_content_data_json is not None:
-        translated_script_content_data_json = asyncio.run(
-            translate_text_to_eng(
-                non_english_content=original_script_content_data_json,
-                language=language,
-                gemini_api_key=gemini_api_key,
-                gemini_model_id=SETTINGS.content.translation_ai_model,
-            )
-        )
-    else:
-        print("❌ Script generation or translation failed. Stopping pipeline.")
-        return
+    # # translate to English so that I can understand
+    # if original_script_content_data_json is not None:
+    #     translated_script_content_data_json = asyncio.run(
+    #         translate_text_to_eng(
+    #             non_english_content=original_script_content_data_json,
+    #             language=language,
+    #             gemini_api_key=gemini_api_key,
+    #             gemini_model_id=SETTINGS.content.translation_ai_model,
+    #         )
+    #     )
+    # else:
+    #     print("❌ Script generation or translation failed. Stopping pipeline.")
+    #     return
+    #
+    # # Saving the json for posting later
+    # thai_and_english_script_data_json = {
+    #     "thai": original_script_content_data_json,
+    #     "english": translated_script_content_data_json,
+    # }
+    #
+    # vid_description_json_full_path = os.path.join(
+    #     OUTPUT_DIR,
+    #     f"thai_and_english_script_data_{SETTINGS.content.brief_topic_description}.json"
+    # )
+    # save_json_file(thai_and_english_script_data_json, vid_description_json_full_path)
 
-    # Saving the json for posting later
-    thai_and_english_script_data_json = {
-        "thai": original_script_content_data_json,
-        "english": translated_script_content_data_json,
-    }
-
-    vid_description_json_full_path = os.path.join(
-        OUTPUT_DIR,
-        f"thai_and_english_script_data_{SETTINGS.content.brief_topic_description}.json"
-    )
-    save_json_file(thai_and_english_script_data_json, vid_description_json_full_path)
-
-    # patch work to use when the whole script data is pre generated (to save generation token)
+    # PATCH work to use when the whole script data is pre generated (to save generation token)
     # vid_description_json_full_path = json.load(open("src/short_form_content_pipeline/Final_output_videos/thai_and_english_script_data.json"))
 
 

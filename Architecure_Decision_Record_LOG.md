@@ -72,7 +72,7 @@
 - **Status:** Accepted
 - **Date:** 2023-12-07
 - **Context:** Standard video libraries like MoviePy rely on ImageMagick for text rendering. ImageMagick often fails to render Thai Complex Text Layout (CTL) correctly, specifically "Vertical Stacking." Vowels and tone marks (e.g.,  ้,  ิ) frequently "float" in the wrong position, overlap with consonants, or render as tofu boxes.
-- **Decision:** Bypassing MoviePy's internal text generator in favor of direct rasterization using the **Pillow (PIL)** library compiled with `libraqm` bindings. Text is drawn onto a transparent RGBA canvas using the HarfBuzz shaping engine and then converted to a MoviePy `ImageClip`.
+- **Decision:** Bypassing MoviePy's internal text generator in favor of direct rasterization using the **Pillow (PIL)** library compiled with `libraqm` bindings. Text is drawn onto a transparent RGBA canvas using the HarfBuzz shaping engine and then converted to a MoviePy `ImageClip`. The system now enforces a Source Compilation Strategy for the Pillow library. Instead of using cached wheels, the library is installed via `$ pip install --upgrade --force-reinstall --no-binary :all: pillow`. This forces the compiler to link against locally installed system libraries (libraqm, freetype, harfbuzz, fribidi) provided by Homebrew. ( `brew install libraqm freetype harfbuzz fribidi pkg-config` )
 - **Consequences:**
     - **Positive:** Ensures typographical correctness for Thai script, eliminating floating vowels and misplaced tone marks.
     - **Positive:** Allows for granular control over stroke width and color that mimics TikTok's native style.
