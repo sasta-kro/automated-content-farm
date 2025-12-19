@@ -68,11 +68,11 @@ def main():
     #         output_folder_path=TEMP_PROCESSING_DIR,
     #     )
     # )
-
+    #
     # PATCH work to use when the thai script is pre generated (to save generation token)
     original_script_content_data_json = json.load(open("src/short_form_content_pipeline/___0w0__temp_automation_workspace/original_script_data.json"))
-
-    # # translate to English so that I can understand
+    #
+    # # translate to English so that I can understand and for description
     # if original_script_content_data_json is not None:
     #     translated_script_content_data_json = asyncio.run(
     #         translate_text_to_eng(
@@ -98,9 +98,9 @@ def main():
     # )
     # save_json_file(thai_and_english_script_data_json, vid_description_json_full_path)
 
-    # PATCH work to use when the whole script data is pre generated (to save generation token)
-    # vid_description_json_full_path = json.load(open("src/short_form_content_pipeline/Final_output_videos/thai_and_english_script_data.json"))
-
+    # PATCH work to use when the whole script data is pre generated and to redo audio (to save generation token)
+    vid_description_json_full_path = json.load(open("src/short_form_content_pipeline/Final_output_videos/thai_and_english_script_data_cloggedToiletAtCrushHome.json"))
+    # TODO: implement a way to efficiently redo audio without redoing the whole pipeline
 
     """ ========= 2. Generate Audio ===================== """
     normal_speed_audio_file, sped_up_audio_file = asyncio.run(

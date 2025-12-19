@@ -76,7 +76,7 @@ def generate_speed_adjusted_subtitle_clips_moviepy_obj(
     """
     Generates a list of TextClips based on word timings and adjust timing if audio is sped up.
     """
-    print(f"4. 🎬 Generating {len(word_data_for_normal_speed_dict)} subtitle clips (Speed Adj: {speed_factor}x)...")
+    print(f"4. 🎬 Generating {len(word_data_for_normal_speed_dict)} subtitle clips (Speed Adjustment: {speed_factor}x)...")
 
     TextClips_list = []
 
