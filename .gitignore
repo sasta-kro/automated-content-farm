@@ -30,3 +30,8 @@ src/short_form_content_pipeline/Final_output_videos
 
 # my personal customized profiles
 /Content_profiles/
+
+# formatting and tools
+/.styleguide/
+digest.md
+repomix.config.json

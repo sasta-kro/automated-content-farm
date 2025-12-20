@@ -68,7 +68,6 @@ def main():
         )
     )
 
-
     # PATCH work to use when the thai script is pre generated (to save generation token)
     # original_script_content_data_json = json.load(open("src/short_form_content_pipeline/___0w0__temp_automation_workspace/original_script_data.json"))
 
@@ -86,18 +85,13 @@ def main():
         print("❌ Script generation or translation failed. Stopping pipeline.")
         return
 
-    # Saving the json for posting later
-    thai_and_english_script_data_json = {
-        "thai": original_script_content_data_json,
-        "english": translated_script_content_data_json,
-    }
-
-    vid_description_json_full_path = os.path.join(
-        OUTPUT_DIR,
-        f"thai_and_english_script_data_{SETTINGS.content.brief_topic_description}.json"
+    # Saving the script data as a YAML file for easy posting and quality of life
+    handle_script_data_and_convert_to_yaml_for_QOL(
+        original_script_content_data=original_script_content_data_json,
+        translated_script_content_data=translated_script_content_data_json,
+        output_dir=OUTPUT_DIR,
+        brief_topic_description=SETTINGS.content.brief_topic_description
     )
-    save_json_file(thai_and_english_script_data_json, vid_description_json_full_path)
-    # TODO: save as .yaml instead for easier copy pasting, and have a "easy copy paste" section
 
     # PATCH work to use when the whole script data is pre generated and to redo audio (to save generation token)
     # vid_description_json_full_path = json.load(open("src/short_form_content_pipeline/Final_output_videos/thai_and_english_script_data_cloggedToiletAtCrushHome.json"))
@@ -124,7 +118,6 @@ def main():
         original_speed_audio_file_path=normal_speed_audio_file,
         output_dir=TEMP_PROCESSING_DIR
     )
-    # TODO: add "follow for more" narration at the end
 
     """ =========== 4. Generate subtitle clips"""
     list_of_moviepyTextClips_sped_up = generate_speed_adjusted_subtitle_clips_moviepy_obj(
