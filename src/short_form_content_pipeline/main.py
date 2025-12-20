@@ -56,50 +56,52 @@ def main():
     """
 
     """ ========== 1. Generate Script ====================="""
-    # # Use "random viral story" to let Gemini be creative
-    # original_script_content_data_json = asyncio.run(
-    #     generate_script_data_json(
-    #         language=language,
-    #         topic= SETTINGS.content.topic,
-    #         time_length=SETTINGS.content.time_length,
-    #         gemini_model_id=SETTINGS.content.script_ai_model,
-    #         gemini_api_key= gemini_api_key,
-    #         temperature=SETTINGS.script_generation_temperature,
-    #         output_folder_path=TEMP_PROCESSING_DIR,
-    #     )
-    # )
-    #
+    # TODO: add part at the end that says something like "follow for more" or "share your experience too", with pydantic toggle in profile yaml
+    # Use "random viral story" to let Gemini be creative
+    original_script_content_data_json = asyncio.run(
+        generate_script_data_json(
+            language=language,
+            topic= SETTINGS.content.topic,
+            time_length=SETTINGS.content.time_length,
+            gemini_model_id=SETTINGS.content.script_ai_model,
+            gemini_api_key= gemini_api_key,
+            temperature=SETTINGS.script_generation_temperature,
+            output_folder_path=TEMP_PROCESSING_DIR,
+        )
+    )
+
     # PATCH work to use when the thai script is pre generated (to save generation token)
-    original_script_content_data_json = json.load(open("src/short_form_content_pipeline/___0w0__temp_automation_workspace/original_script_data.json"))
-    #
-    # # translate to English so that I can understand and for description
-    # if original_script_content_data_json is not None:
-    #     translated_script_content_data_json = asyncio.run(
-    #         translate_text_to_eng(
-    #             non_english_content=original_script_content_data_json,
-    #             language=language,
-    #             gemini_api_key=gemini_api_key,
-    #             gemini_model_id=SETTINGS.content.translation_ai_model,
-    #         )
-    #     )
-    # else:
-    #     print("❌ Script generation or translation failed. Stopping pipeline.")
-    #     return
-    #
-    # # Saving the json for posting later
-    # thai_and_english_script_data_json = {
-    #     "thai": original_script_content_data_json,
-    #     "english": translated_script_content_data_json,
-    # }
-    #
-    # vid_description_json_full_path = os.path.join(
-    #     OUTPUT_DIR,
-    #     f"thai_and_english_script_data_{SETTINGS.content.brief_topic_description}.json"
-    # )
-    # save_json_file(thai_and_english_script_data_json, vid_description_json_full_path)
+    # original_script_content_data_json = json.load(open("src/short_form_content_pipeline/___0w0__temp_automation_workspace/original_script_data.json"))
+
+    # translate to English so that I can understand and for description
+    if original_script_content_data_json is not None:
+        translated_script_content_data_json = asyncio.run(
+            translate_text_to_eng(
+                non_english_content=original_script_content_data_json,
+                language=language,
+                gemini_api_key=gemini_api_key,
+                gemini_model_id=SETTINGS.content.translation_ai_model,
+            )
+        )
+    else:
+        print("❌ Script generation or translation failed. Stopping pipeline.")
+        return
+
+    # Saving the json for posting later
+    thai_and_english_script_data_json = {
+        "thai": original_script_content_data_json,
+        "english": translated_script_content_data_json,
+    }
+
+    vid_description_json_full_path = os.path.join(
+        OUTPUT_DIR,
+        f"thai_and_english_script_data_{SETTINGS.content.brief_topic_description}.json"
+    )
+    save_json_file(thai_and_english_script_data_json, vid_description_json_full_path)
+    # TODO: save as .yaml instead for easier copy pasting, and have a "easy copy paste" section
 
     # PATCH work to use when the whole script data is pre generated and to redo audio (to save generation token)
-    vid_description_json_full_path = json.load(open("src/short_form_content_pipeline/Final_output_videos/thai_and_english_script_data_cloggedToiletAtCrushHome.json"))
+    # vid_description_json_full_path = json.load(open("src/short_form_content_pipeline/Final_output_videos/thai_and_english_script_data_cloggedToiletAtCrushHome.json"))
     # TODO: implement a way to efficiently redo audio without redoing the whole pipeline
 
     """ ========= 2. Generate Audio ===================== """
@@ -123,7 +125,7 @@ def main():
         original_speed_audio_file_path=normal_speed_audio_file,
         output_dir=TEMP_PROCESSING_DIR
     )
-
+    # TODO: add "follow for more" narration at the end
 
     """ =========== 4. Generate subtitle clips"""
     list_of_moviepyTextClips_sped_up = generate_speed_adjusted_subtitle_clips_moviepy_obj(
@@ -136,7 +138,10 @@ def main():
         stroke_color=SETTINGS.visuals.stroke_color
     )
 
+    # TODO: fix the black screen trailing at the end. Sound and subtitles haven't ended but bg video ended
 
+    # TODO: Tiktok currently thinks the bg clips are unoriginal. It checks by Pixels and apparently a lot of other people
+    # used it too. So I need to modify the bg to "seem original" by color grading, zoom in by 10%, speed up gameplay by 1.173%, overlay (grain)
     """ =========== 5. Generate The Final Video with Subtitles and Background, combined with Sped up Audio  """
     final_video_file_path = run_composite_final_video_pipeline(
         media_folder=MEDIA_RESOURCES_DIR,
