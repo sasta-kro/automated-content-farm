@@ -98,28 +98,37 @@ async def generate_script_data_json(
 
         # Parse JSON
         raw_json = response.text
-        data = json.loads(raw_json)
+        script_data = json.loads(raw_json)
+
+        # updating the json to append outro
+        script_data['script_text'] = _append_outro_phrase(script_data['script_text'])
 
         print(textwrap.dedent(f"""
-        Title: {data.get('title_text')}
-        Full Script ('script_text'): {data.get('script_text')}
-        Gender: {data.get('gender')}
-        Description: {data.get('description_text')}
-        Hashtags: {data.get('hashtags')}
+        Title: {script_data.get('title_text')}
+        Full Script ('script_text'): {script_data.get('script_text')}
+        Gender: {script_data.get('gender')}
+        Description: {script_data.get('description_text')}
+        Hashtags: {script_data.get('hashtags')}
         """))
 
         # Save to a JSON file for inspection
         output_json_file_name = "original_script_data.json"
         full_json_save_location = os.path.join(output_folder_path, output_json_file_name)
-        save_json_file(data, full_json_save_location)
+        save_json_file(script_data, full_json_save_location)
 
         print(" ")
 
-        return data
+        return script_data
 
     except Exception as e:
         print(f"❌ Error generating script: {e}")
         raise e
+
+
+def _append_outro_phrase(original_text: str):
+    text_to_append = "ใครเคยเจอแบบนี้บ้างวะ เมนต์มาบอกหน่อย! ชอบใจฝากกดไลก์กดติดตามไว้เลยนะมึง!"
+    return original_text + text_to_append
+
 
 
 # for translation
@@ -190,7 +199,7 @@ if __name__ == "__main__":
     result = asyncio.run(
         generate_script_data_json(
             language="Thai",
-            topic=  "tripped and fell face onto dog poop", #"caught boyfriend cheating with my mother",
+            topic=  "shat in a urinal", #"caught boyfriend cheating with my mother",
             time_length="25-35",
             gemini_model_id="gemini-flash-latest",
             gemini_api_key= SETTINGS.GEMINI_API_KEY,
@@ -211,3 +220,13 @@ if __name__ == "__main__":
     print("finished generating script")
     print(result)
     print(translated)
+
+    save_json_file(
+        result,
+        os.path.join(full_debug_dir, "debug_thai_script_data.json")
+    )
+
+    save_json_file(
+        translated,
+        os.path.join(full_debug_dir, "debug_translated_script_data.json")
+    )

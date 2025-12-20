@@ -56,8 +56,6 @@ def main():
     """
 
     """ ========== 1. Generate Script ====================="""
-    # TODO: add part at the end that says something like "follow for more" or "share your experience too", with pydantic toggle in profile yaml
-    # Use "random viral story" to let Gemini be creative
     original_script_content_data_json = asyncio.run(
         generate_script_data_json(
             language=language,
@@ -70,10 +68,11 @@ def main():
         )
     )
 
+
     # PATCH work to use when the thai script is pre generated (to save generation token)
     # original_script_content_data_json = json.load(open("src/short_form_content_pipeline/___0w0__temp_automation_workspace/original_script_data.json"))
 
-    # translate to English so that I can understand and for description
+    # translating to English so that I can understand and for description
     if original_script_content_data_json is not None:
         translated_script_content_data_json = asyncio.run(
             translate_text_to_eng(

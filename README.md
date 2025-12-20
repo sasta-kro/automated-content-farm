@@ -61,7 +61,7 @@ graph TD
 
 ---
 
-## 🧩 Modules Overview
+## Modules Overview
 
 | Module | Function | Engineering Highlight |
 | :--- | :--- | :--- |
