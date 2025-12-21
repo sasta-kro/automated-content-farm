@@ -2,18 +2,26 @@ import yaml
 import os
 
 
-# By creating a custom string type, we can assign a specific representer to it
-# this gives precise control over which strings get the literal block style
 class LiteralString(str):
+    """
+    Custom string class to indicate that this specific string
+    should be formatted as a literal block (|) in YAML
+    """
     pass
 
-def literal_string_presenter(dumper, data):
-    """Represents a string using the literal block style '|'. """
+
+def literalString_presenter(dumper, data):
+    """
+    Represents a LiteralString using the block style '|'
+    This preserves newlines and avoids quotation marks for large text blocks.
+    """
     return dumper.represent_scalar('tag:yaml.org,2002:str', data, style='|')
 
 # immediate config assignment
-# This tells PyYAML: "Whenever you see an object of type LiteralString, use our custom function to format it."
-yaml.add_representer(LiteralString, literal_string_presenter)
+
+# Registering the custom representer with PyYAML
+# "whenever you see an object of type LiteralString, use the custom function to format it."
+yaml.add_representer(LiteralString, literalString_presenter)
 
 
 def handle_script_data_and_convert_to_yaml_for_QOL(
@@ -33,33 +41,30 @@ def handle_script_data_and_convert_to_yaml_for_QOL(
     thai_description = original_script_content_data.get("description_text")
     thai_hashtags = original_script_content_data.get("hashtags")
 
-    # FIX: Use the correct 'translated_' prefixed keys for the english content.
     english_description = translated_script_content_data.get("translated_description")
     english_hashtags = translated_script_content_data.get("translated_hashtags")
 
     # QOL copy-paste string with two newlines between sections for easy copying.
-    # A trailing newline is added to ensure PyYAML uses `|` (clip) instead of `|-` (strip).
-    qol_copy_paste_string = \
-        f"{thai_title}\n\n{thai_description}\n\n{thai_hashtags}\n\n{english_description}\n\n{english_hashtags}\n"
-
-    # Wrap strings for consistent formatting
-    # iterate through the dictionaries and wrap their string values in our custom
-    # LiteralString class. This marks them for the custom representer.
-    formatted_thai_data = {
-        key: LiteralString(value) if isinstance(value, str) else value
-        for key, value in original_script_content_data.items()
-    }
-    formatted_english_data = {
-        key: LiteralString(value) if isinstance(value, str) else value
-        for key, value in translated_script_content_data.items()
-    }
+    # A trailing newline is added to make sure PyYAML uses `|` (clip) instead of `|-` (strip).
+    qol_copy_paste_string = (
+        f"{thai_title}\n\n"
+        f"{thai_description}\n\n"
+        f"{thai_hashtags}\n\n"
+        f"{english_description}\n\n"
+        f"{english_hashtags}\n"
+    )
 
     # final data dictionary with the QOL field at the top
     final_data_structure = {
-        # also wrap the QOL string to ensure it gets the same treatment
+        # wrap the QOL string in the custom LiteralString class to flag yaml to use the custom formatter defined above
         "QOL_copy_paste": LiteralString(qol_copy_paste_string),
-        "thai": formatted_thai_data,
-        "english": formatted_english_data,
+
+        # the originals just they are
+        # NOTE: yaml lib uses a smart parser that only wraps the text in quotes (like a string)
+        # only when it has special characters (like # for comment in yaml)
+        # otherwise it will just dump/write it as raw text. Which is normal behaviour
+        "thai": original_script_content_data,
+        "english": translated_script_content_data,
     }
 
     # output path and save as YAML
@@ -69,8 +74,8 @@ def handle_script_data_and_convert_to_yaml_for_QOL(
     with open(full_yaml_save_location, 'w', encoding='utf-8') as f:
         # `allow_unicode=True` preserves non-ASCII characters (Thai)
         # `sort_keys=False` maintains the order defined above for better readability
-        # `width` is less critical now due to the custom representer but kept for safety
-        yaml.dump(final_data_structure, f, allow_unicode=True, sort_keys=False, width=120)
+        # `width=1000` prevents PyYAML from aggressively wrapping long lines
+        yaml.dump(final_data_structure, f, allow_unicode=True, sort_keys=False, width=1000)
 
     print(f"    QOL script data saved to: {full_yaml_save_location}")
     return full_yaml_save_location
