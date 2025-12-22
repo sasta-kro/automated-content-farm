@@ -37,9 +37,9 @@ def handle_script_data_and_convert_to_yaml_for_QOL(
     print("   📝 Generating QOL YAML file for social media posting...")
 
     # Extracting the content for the QOL field
-    thai_title = original_script_content_data.get("title_text")
-    thai_description = original_script_content_data.get("description_text")
-    thai_hashtags = original_script_content_data.get("hashtags")
+    original_title = original_script_content_data.get("title_text")
+    original_description = original_script_content_data.get("description_text")
+    original_hashtags = original_script_content_data.get("hashtags")
 
     english_description = translated_script_content_data.get("translated_description")
     english_hashtags = translated_script_content_data.get("translated_hashtags")
@@ -47,9 +47,9 @@ def handle_script_data_and_convert_to_yaml_for_QOL(
     # QOL copy-paste string with two newlines between sections for easy copying.
     # A trailing newline is added to make sure PyYAML uses `|` (clip) instead of `|-` (strip).
     qol_copy_paste_string = (
-        f"{thai_title}\n\n"
-        f"{thai_description}\n\n"
-        f"{thai_hashtags}\n\n"
+        f"{original_title}\n\n"
+        f"{original_description}\n\n"
+        f"{original_hashtags}\n\n"
         f"{english_description}\n\n"
         f"{english_hashtags}\n"
     )
@@ -63,7 +63,7 @@ def handle_script_data_and_convert_to_yaml_for_QOL(
         # NOTE: yaml lib uses a smart parser that only wraps the text in quotes (like a string)
         # only when it has special characters (like # for comment in yaml)
         # otherwise it will just dump/write it as raw text. Which is normal behaviour
-        "thai": original_script_content_data,
+        "source_language": original_script_content_data,
         "english": translated_script_content_data,
     }
 
@@ -95,7 +95,7 @@ if __name__ == "__main__":
     with open(test_json_data, 'r', encoding='utf-8') as f:
         full_script_data = json.load(f)
 
-    mock_original_script_data = full_script_data.get("thai")
+    mock_original_script_data = full_script_data.get("source_language")
     mock_translated_script_data = full_script_data.get("english")
 
     if not mock_original_script_data or not mock_translated_script_data:

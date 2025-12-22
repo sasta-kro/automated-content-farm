@@ -6,7 +6,7 @@ import random
 import PIL.Image
 from moviepy.video.fx.speedx import speedx
 
-from src.short_form_content_pipeline.Util_functions import display_print_ffmpeg_metadata_parameters, \
+from src.short_form_content_pipeline.Util_functions import \
     set_debug_dir_for_module_of_pipeline
 
 # important: register ANTIALIAS as LANCZOS for Pillow 10.x compatibility
@@ -75,7 +75,7 @@ def _select_weighted_random_video(video_list):
     print(f"    Randomly Selected BG Video: {os.path.basename(selected_video['path'])} ({int(selected_video['duration']/60)} mins)")
     return selected_video
 
-def _prepare_background_clip(video_info, target_duration, target_resolution=(1080, 1920)):
+def _prepare_and_preprocess_background_clip(video_info, target_duration, target_resolution=(1080, 1920)):
     """
     Loads video, selects random segment, mirror flips (anti-copyright), crops to 9:16.
     """
@@ -143,16 +143,17 @@ def run_composite_final_video_pipeline(
     # Get audio duration (needed for BG video selection)
     # using a context manager to ensure file handles are closed immediately
     with AudioFileClip(normal_speed_audio_file_path) as temp_clip:
-        original_audio_duration = temp_clip.duration
+        original_audio_duration = temp_clip.duration + 2.0 # buffer trailing time to not end with a black screen
 
     # Select bg video & Prepare background clip (1x normal speed at first)
     available_videos = _scan_media_folder(
         folder_path=media_folder,
         minimum_time_s=original_audio_duration
     )
+
     selected_video_info = _select_weighted_random_video(available_videos)
 
-    background_clip = _prepare_background_clip(
+    background_clip = _prepare_and_preprocess_background_clip(
         video_info=selected_video_info,
         target_duration=original_audio_duration
     )
@@ -233,6 +234,7 @@ if __name__ == "__main__":
         bg_video_speed_factor=1.3,
         subtitle_clips_speed_adjusted=list_of_debug_moviepyTextClips,
         temp_processing_dir=full_debug_dir,
+        brief_video_description="test run",
         output_dir=full_debug_dir,  # this is fine since this is testing
     )
 

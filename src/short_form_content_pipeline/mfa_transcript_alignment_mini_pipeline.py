@@ -216,7 +216,6 @@ def run_mfa_pipeline(
         raw_script_text_from_json: str,
         original_speed_audio_file_path: str,
         output_dir: str,
-        mfa_cmd="mfa"
 ):
     """
     Orchestrator function for the MFA alignment pipeline.
