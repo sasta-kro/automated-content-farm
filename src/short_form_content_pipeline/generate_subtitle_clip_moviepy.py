@@ -66,7 +66,7 @@ def generate_speed_adjusted_subtitle_clips_moviepy_obj(
         speed_factor: float,
 
         # visual settings will be injected from config file and overwritten.
-        # The defaults are here because why not
+        # The defaults are here because why not, but it should be in the config
         font_path: str = "/Users/saiaikeshwetunaung/Developer/PythonProjects/Automated_content_farm/media_resources/thai_fonts/Prompt-Bold.ttf",
         fontsize: int = 120,
         color: str ='yellow',     # Yellow is standard for Thai TikTok

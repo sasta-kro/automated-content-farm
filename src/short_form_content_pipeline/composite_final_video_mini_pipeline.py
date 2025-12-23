@@ -121,8 +121,7 @@ def _prepare_and_preprocess_background_clip(video_info, target_duration, target_
 
 
 
-# ==========================================
-#        PUBLIC ORCHESTRATOR
+# PUBLIC ORCHESTRATOR
 # ==========================================
 
 def run_composite_final_video_pipeline(

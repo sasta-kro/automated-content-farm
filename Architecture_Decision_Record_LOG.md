@@ -140,3 +140,19 @@
 - **Rejected Alternatives:**
     - **Injection during Rendering:** Rejected to keep the MoviePy composition function clean and focused solely on visual assembly.
     - **External Metadata Tools (ExifTool):** Rejected in favor of FFmpeg to minimize external dependencies, as FFmpeg is already required for the pipeline.
+    - 
+### 011. Exclusive CPU Encoding (libx264) for Rendering
+- **Status:** Rejected
+- **Date:** 2025-12-23
+- **Context:** Slow rendering times were observed on M3 Apple Silicon hardware (~10 minutes for a 40s vertical 2K video). It was hypothesized that the bottleneck originated from inefficient hardware encoder negotiation. An attempt was made to force the pipeline to use the CPU-only software encoder `libx264` with the `ultrafast` preset to bypass potential hardware-layer issues and isolate the rendering logic.
+
+- **Decision:** The proposal to enforce CPU-only handling is **Rejected**. The system has been reverted to the previous implementation (default FFmpeg orchestration).
+
+- **Consequences:**
+  - **Negative Impact (Performance Regression):** The switch to `libx264` resulted in a 3x reduction in processing speed. Rendering dropped from ~1.9 it/s (0.5s/frame) to ~0.7 it/s (1.4s/frame).
+  - **Negative Impact (Resource Contention & GIL):** MoviePy relies on Python's Global Interpreter Lock (GIL) for calculating frame composites (text overlays, resizing). By forcing video encoding onto the CPU, the single-threaded Python process was forced to compete for CPU cycles against the computationally expensive `libx264` encoder, causing thread starvation.
+  - **Negative Impact (Color Space Conversion Overhead):** MoviePy generates frames in raw RGB format. The H.264 standard requires the YUV color space.  Forcing this heavy RGB-to-YUV conversion explicitly onto the general-purpose CPU—rather than allowing the M3's media engines or optimized OS drivers to handle the handoff—created a massive computational bottleneck for every individual frame.
+  - **Positive (Reversion):** Reverting to the original implementation restored baseline rendering speeds. The default behavior allows the operating system to better manage the buffer transfer between Python's memory and the encoder, utilizing the M3's unified memory bandwidth more effectively than a strict CPU-bound pipe.
+
+- **Rejected Alternatives:**
+  - **Persisting with `libx264` Optimization:** Rejected because the severe performance degradation (3x slower) renders the pipeline impractical for high-volume content generation. The theoretical stability of software encoding does not justify the time cost on Apple Silicon architecture.

@@ -1,6 +1,7 @@
 import asyncio
 import os
 import yaml
+import json
 
 from src.short_form_content_pipeline.composite_final_video_mini_pipeline import run_composite_final_video_pipeline
 from src.short_form_content_pipeline.generate_audio_from_script import generate_audio_narration_files
@@ -50,49 +51,49 @@ def main():
     main entry point of the automated content farm
     """
 
-    # """ ========== 1. Generate Script ====================="""
-    # original_script_content_data_json = asyncio.run(
-    #     generate_script_data_json(
-    #         language=language,
-    #         topic= SETTINGS.content.topic,
-    #         time_length=SETTINGS.content.time_length,
-    #         gemini_model_id=SETTINGS.content.script_ai_model,
-    #         gemini_api_key= gemini_api_key,
-    #         temperature=SETTINGS.script_generation_temperature,
-    #         output_folder_path=TEMP_PROCESSING_DIR,
-    #     )
-    # )
-    #
-    # # PATCH work to use when the thai script is pre generated (to save generation token)
-    # # original_script_content_data_json = json.load(open("src/short_form_content_pipeline/___0w0__temp_automation_workspace/original_script_data.json"))
-    #
-    # # translating to English so that I can understand and for description
-    # if original_script_content_data_json is not None:
-    #     translated_script_content_data_json = asyncio.run(
-    #         translate_text_to_eng(
-    #             non_english_content=original_script_content_data_json,
-    #             language=language,
-    #             gemini_api_key=gemini_api_key,
-    #             gemini_model_id=SETTINGS.content.translation_ai_model,
-    #         )
-    #     )
-    # else:
-    #     print("❌ Script generation or translation failed. Stopping pipeline.")
-    #     return
-    #
-    # # Saving the script data as a YAML file for easy posting and quality of life
-    # handle_script_data_and_convert_to_yaml_for_QOL(
-    #     original_script_content_data=original_script_content_data_json,
-    #     translated_script_content_data=translated_script_content_data_json,
-    #     output_dir=OUTPUT_DIR,
-    #     brief_topic_description=SETTINGS.content.brief_topic_description
-    # )
+    """ ========== 1. Generate Script ====================="""
+    original_script_content_data_json = asyncio.run(
+        generate_script_data_json(
+            language=language,
+            topic= SETTINGS.content.topic,
+            time_length=SETTINGS.content.time_length,
+            gemini_model_id=SETTINGS.content.script_ai_model,
+            gemini_api_key= gemini_api_key,
+            temperature=SETTINGS.script_generation_temperature,
+            output_folder_path=TEMP_PROCESSING_DIR,
+        )
+    )
+
+    # PATCH work to use when the thai script is pre generated (to save generation token)
+    # original_script_content_data_json = json.load(open("src/short_form_content_pipeline/___0w0__temp_automation_workspace/original_script_data.json"))
+
+    # translating to English so that I can understand and for description
+    if original_script_content_data_json is not None:
+        translated_script_content_data_json = asyncio.run(
+            translate_text_to_eng(
+                non_english_content=original_script_content_data_json,
+                language=language,
+                gemini_api_key=gemini_api_key,
+                gemini_model_id=SETTINGS.content.translation_ai_model,
+            )
+        )
+    else:
+        print("❌ Script generation or translation failed. Stopping pipeline.")
+        return
+
+    # Saving the script data as a YAML file for easy posting and quality of life
+    handle_script_data_and_convert_to_yaml_for_QOL(
+        original_script_content_data=original_script_content_data_json,
+        translated_script_content_data=translated_script_content_data_json,
+        output_dir=OUTPUT_DIR,
+        brief_topic_description=SETTINGS.content.brief_topic_description
+    )
 
     # PATCH work to use when the whole script data is pre generated and to redo audio (to save generation token)
-    with open(
-        "src/short_form_content_pipeline/Final_output_videos/full_QOL_script_data_bfDrankHandwashWater.yaml",
-        "r",
-    ) as file: original_script_content_data_json = yaml.safe_load(file)["source_language"]
+    # with open(
+    #     "src/short_form_content_pipeline/Final_output_videos/full_QOL_script_data_bfDrankHandwashWater.yaml",
+    #     "r",
+    # ) as file: original_script_content_data_json = yaml.safe_load(file)["source_language"]
     # TODO: implement a way to efficiently redo audio without redoing the whole pipeline
 
     """ ========= 2. Generate Audio ===================== """

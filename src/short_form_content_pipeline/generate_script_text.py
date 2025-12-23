@@ -47,7 +47,7 @@ async def generate_script_data_json(
         hashtags: str = Field(description=f"Relevant viral hashtags in {language}")
 
 
-    print(f"1. 🇹🇭 Asking {gemini_model_id} to cook up a '{topic}' story script in {language}...")
+    print(f"1. 🇹🇭 Asking {gemini_model_id} to cook up the story script in {language}...\nTopic:{topic}")
 
     # Initialize Client with Global Settings (stored in config)
     if not gemini_api_key:
@@ -126,7 +126,7 @@ async def generate_script_data_json(
 
 
 def _append_outro_phrase(original_text: str):
-    text_to_append = "ใครเคยเจอแบบนี้บ้างวะ เมนต์มาบอกหน่อย! ชอบใจฝากกดไลก์กดติดตามไว้เลยนะมึง!"
+    text_to_append = "ชอบใจฝากกดไลก์กดติดตามไว้เลยนะมึง! แล้วใครเคยเจอแบบนี้บ้างวะ เมนต์มาบอกหน่อย!"
     return original_text + text_to_append
 
 
