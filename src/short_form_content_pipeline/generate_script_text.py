@@ -47,7 +47,7 @@ async def generate_script_data_json(
         hashtags: str = Field(description=f"Relevant viral hashtags in {language}")
 
 
-    print(f"1. 🇹🇭 Asking {gemini_model_id} to cook up the story script in {language}...\nTopic:{topic}")
+    print(f"1. 🇹🇭 Asking {gemini_model_id} to cook up the story script in {language}...\n Given topic:{topic}")
 
     # Initialize Client with Global Settings (stored in config)
     if not gemini_api_key:
