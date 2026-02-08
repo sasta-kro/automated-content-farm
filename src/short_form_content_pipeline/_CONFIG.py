@@ -23,7 +23,7 @@ DOTENV_PATH = os.path.join(PROJECT_ROOT_PATH, ".env")
 # ⚠️ NOTE to myself: the variable/key naming MUST match between here and the .yaml file
 
 class ContentSettings(BaseModel):
-    theme_for_persona: str
+    preset_persona: str
     language: str
     topic: str
     brief_topic_description: str

@@ -4,15 +4,15 @@
 ![Architecture](https://img.shields.io/badge/Architecture-Singleton_%7C_DI-orange)
 ![MFA](https://img.shields.io/badge/NLP-Montreal_Forced_Aligner-red)
 ![FFmpeg](https://img.shields.io/badge/FFmpeg-Signal_Processing-green?logo=ffmpeg&logoColor=white)
-![Gemini AI](https://img.shields.io/badge/AI-Gemini_2.5_Pro-purple?logo=google&logoColor=white)
+ome[Gemini AI](https://img.shields.io/badge/AI-Gemini_2.5-purple?logo=google&logoColor=white)
 
 An end-to-end **Algorithmic Media Engine** engineered to autonomously produce viral short-form video content tailored for the Thai demographic.
 
-This project is not just a simple automation script, it is a **production-grade distributed pipeline** that orchestrates Large Language Models (LLMs), Neural Text-to-Speech, Phonetic Alignment engines, and complex programmatic video compositing. It solves high-barrier engineering challenges regarding **non-Latin script rendering**, **audio signal processing**, and **algorithmic anti-fingerprinting**.
+This project is a **production-grade distributed pipeline** that orchestrates Large Language Models (LLMs), Neural Text-to-Speech, Phonetic Alignment engines, and complex programmatic video compositing. It solves high-barrier engineering challenges regarding **non-Latin script rendering**, **audio signal processing**, and **algorithmic anti-fingerprinting**.
 
 ---
 
-## ⚙️ Engineering Challenges & Solutions (Why this matters)
+## ⚙️ Engineering Challenges & Solutions
 
 Most automation tools fail when applied to the Thai language due to its unique linguistic properties. This system overcomes those limitations through custom engineering:
 
@@ -20,7 +20,7 @@ Most automation tools fail when applied to the Thai language due to its unique l
 *   **The Problem:** Standard renderers (ImageMagick/MoviePy) cannot handle Thai "Vertical Stacking." Vowels and tone marks (e.g., `้`, `ิ`) often float in the wrong positions or overlap consonants.
 *   **The Engineering Solution:** Implemented a custom text rasterization engine using **Pillow (PIL)** compiled with **Libraqm** and **HarfBuzz** bindings. This forces OpenType shaping logic to ensure pixel-perfect typography for non-Latin scripts.
 
-### 2. Phonetic Alignment for *Scriptio Continua*
+### 2. Phonetic Alignment for No-spaced Languages
 *   **The Problem:** Thai is written without spaces between words. Standard regex splitters cannot synchronize subtitles with audio because they cannot determine word boundaries.
 *   **The Engineering Solution:** Integrated the **Montreal Forced Aligner (MFA)**. The pipeline performs forced alignment against a Thai acoustic model to calculate millisecond-accurate timestamps for every phoneme.
 *   **Tokenization Logic:** Injected a **Custom Dictionary Trie** into the PyThaiNLP tokenizer to handle "Netizen Slang" (e.g., `แกรร`, `จึ้ง`), preventing alignment crashes on out-of-vocabulary terms.

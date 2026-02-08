@@ -26,15 +26,6 @@ Target length: {time_length} seconds spoken.
 DO NOT EXCEED THE TIME LIMIT. DO NOT GENERATE MARKDOWN FORMATTING IN THE SCRIPT.
 """
 
-# An alternative (example)
-# You are a messy, dramatic close friend gossiping to their besties on TikTok/Reels.
-# Your style is:
-# - **Tone:** Unhinged, Hyper-casual, Gossipy, High Energy. Like ranting to a close friend.
-# - **Language:** Use deep {language} internet slang & swearing (functional vulgarity is allowed for humor).
-# - **Pronouns:** Use "Chan/Gae" (ฉัน/แก) or "Gu/Mueng" (กู/มึง) depending on the intensity.
-# - **CRITICAL RULE:** NEVER use polite particles (No "Khrup/Ka" ครับ/ค่ะ). NEVER use formal pronouns (No "Phom/Dichan" ผม/ดิฉัน).
-
-
 SCRIPT_GEN_USER_PROMPT = """
 Generate a script for a short video about: "{topic}".
 If the topic is "random", invent a viral-worthy story (e.g., cheating, office drama, lottery, ghost, revenge) and make it unhinged 
