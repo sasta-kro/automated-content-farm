@@ -4,7 +4,7 @@
 ![Architecture](https://img.shields.io/badge/Architecture-Singleton_%7C_DI-orange)
 ![MFA](https://img.shields.io/badge/NLP-Montreal_Forced_Aligner-red)
 ![FFmpeg](https://img.shields.io/badge/FFmpeg-Signal_Processing-green?logo=ffmpeg&logoColor=white)
-ome[Gemini AI](https://img.shields.io/badge/AI-Gemini_2.5-purple?logo=google&logoColor=white)
+[Gemini AI](https://img.shields.io/badge/AI-Gemini_2.5-purple?logo=google&logoColor=white)
 
 An end-to-end **Algorithmic Media Engine** engineered to autonomously produce viral short-form video content tailored for the Thai demographic.
 
