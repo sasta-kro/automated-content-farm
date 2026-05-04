@@ -88,6 +88,7 @@ def main():
         output_dir=OUTPUT_DIR,
         brief_topic_description=SETTINGS.content.brief_topic_description
     )
+    # TODO: timestamp qol file in file name so that it doesn't get overridden when rerun
 
     # PATCH work to use when the whole script data is pre generated and to redo audio (to save generation token)
     # with open(
