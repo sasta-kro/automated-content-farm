@@ -19,7 +19,9 @@ venv/
 
 # unused legacy code
 /src/_legacy_code_archives/
-/src/_project_unrelated_utils/
+/src/_project_unrelated_utils/*
+!/src/_project_unrelated_utils/burmese_alignment_smoke_test/
+!/src/_project_unrelated_utils/burmese_alignment_smoke_test/*.py
 src/short_form_content_pipeline/___0w0__temp_automation_workspace/
 src/short_form_content_pipeline/___debug_dir
 src/short_form_content_pipeline/correct_test_files
@@ -35,3 +37,6 @@ src/short_form_content_pipeline/Final_output_videos
 /.styleguide/
 digest.md
 repomix.config.json
+.memory/
+/tmp_trash/
+/AGENTS.md
