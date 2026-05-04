@@ -60,6 +60,13 @@ class PipelineSettings(BaseModel):
     clean_temp_0w0_after_run: bool
 
 
+class AlignmentSettings(BaseModel):
+    strategy: Literal["mfa", "simple", "disabled"]
+    tokenizer: Literal["thai", "burmese", "whitespace"]
+    mfa_dictionary: str
+    mfa_acoustic_model: str
+
+
 
 
 
@@ -85,6 +92,7 @@ class Settings(BaseSettings):
     visuals: Optional[VisualSettings] = None
     metadata: Optional[MetadataSettings] = None
     pipeline: Optional[PipelineSettings] = None
+    alignment: Optional[AlignmentSettings] = None
 
     # Secrets (Loaded from .env file with Settings)
     GEMINI_API_KEY: str
@@ -115,6 +123,7 @@ class Settings(BaseSettings):
         self.visuals = VisualSettings(**yaml_profile_data['visuals'])
         self.metadata = MetadataSettings(**yaml_profile_data['metadata'])
         self.pipeline = PipelineSettings(**yaml_profile_data['pipeline'])
+        self.alignment = AlignmentSettings(**yaml_profile_data['alignment'])
 
 # Initialize
 SETTINGS = Settings()
@@ -152,6 +161,4 @@ if __name__ == "__main__":
     visual_settings = getattr(SETTINGS, "visuals")
     font = getattr(visual_settings, "font")
     print(font)
-
-
 

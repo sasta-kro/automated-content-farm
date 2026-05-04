@@ -104,7 +104,12 @@ def _stage_audio_and_script_files_for_mfa(audio_file_path, tokenized_text, mfa_i
     # now we should have both the audio and .lab in the same input folder for mfa
 
 
-def _execute_mfa_subprocess(input_dir, output_dir):
+def _execute_mfa_subprocess(
+        input_dir,
+        output_dir,
+        mfa_dictionary: str = "thai_mfa",
+        mfa_acoustic_model: str = "thai_mfa",
+):
     """
     Constructs the Conda run command and executes MFA alignment via subprocess.
 
@@ -139,11 +144,11 @@ def _execute_mfa_subprocess(input_dir, output_dir):
 
     print("  ⏳ Running MFA Alignment (this might take a moment)...")
 
-    # Constructing command to run inside 'mfa' conda environment
-    # In the future, we could pull 'mfa' env name from SETTINGS if needed
+    # Constructing command to run inside 'mfa' conda environment.
+    # The dictionary and acoustic model are injected so non-Thai MFA models can be added without touching this subprocess wrapper.
     command = [
         "conda", "run", "-n", "mfa", "mfa", "align",
-        input_dir, "thai_mfa", "thai_mfa", output_dir,
+        input_dir, mfa_dictionary, mfa_acoustic_model, output_dir,
         "--clean", "--beam", "100", "--output_format", "long_textgrid"
     ]
 
@@ -216,6 +221,9 @@ def run_mfa_pipeline(
         raw_script_text_from_json: str,
         original_speed_audio_file_path: str,
         output_dir: str,
+        tokenizer: str = "thai",
+        mfa_dictionary: str = "thai_mfa",
+        mfa_acoustic_model: str = "thai_mfa",
 ):
     """
     Orchestrator function for the MFA alignment pipeline.
@@ -227,6 +235,12 @@ def run_mfa_pipeline(
 
     # Setup Environment
     mfa_input_dir, mfa_output_dir = _setup_mfa_directories(output_dir=output_dir)
+
+    if tokenizer != "thai":
+        raise NotImplementedError(
+            f"MFA tokenizer '{tokenizer}' is not implemented yet. "
+            "Only the Thai PyThaiNLP tokenizer is currently wired up."
+        )
 
     # Prepare Text (Clean & Tokenize)
     cleaned_script_text = _preprocess_thai_text(raw_text=raw_script_text_from_json)
@@ -242,7 +256,9 @@ def run_mfa_pipeline(
     # 4. Execute Alignment with MFA in terminal -> this will output file in the output dir
     _execute_mfa_subprocess(
         input_dir=mfa_input_dir,
-        output_dir=mfa_output_dir
+        output_dir=mfa_output_dir,
+        mfa_dictionary=mfa_dictionary,
+        mfa_acoustic_model=mfa_acoustic_model,
     )
 
     # 5. Parse Results to json

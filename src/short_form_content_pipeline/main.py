@@ -8,8 +8,8 @@ from src.short_form_content_pipeline.generate_audio_from_script import generate_
 from src.short_form_content_pipeline.generate_script_text import generate_script_data_json, translate_text_to_eng
 from src.short_form_content_pipeline.handle_script_data_yaml import handle_script_data_and_convert_to_yaml_for_QOL
 from src.short_form_content_pipeline.generate_subtitle_clip_moviepy import generate_speed_adjusted_subtitle_clips_moviepy_obj, _create_debug_subtitle_clip
+from src.short_form_content_pipeline.generate_transcript_alignment import generate_aligned_transcript_data
 from src.short_form_content_pipeline.metadata_injector import inject_spoofed_metadata_into_video
-from src.short_form_content_pipeline.mfa_transcript_alignment_mini_pipeline import run_mfa_pipeline
 
 
 """ ========== 0. Initialize Settings and Configurations =========="""
@@ -111,12 +111,15 @@ def main():
     )
 
 
-    """ ========== 3. Generate transcript with timestamps for dynamic video subtitles via MFA"""
+    """ ========== 3. Generate transcript with timestamps for dynamic video subtitles"""
 
-    aligned_transcript_data_for_original_audio = run_mfa_pipeline(
+    aligned_transcript_data_for_original_audio = generate_aligned_transcript_data(
         raw_script_text_from_json=original_script_content_data_json.get('script_text'),
         original_speed_audio_file_path=normal_speed_audio_file,
-        output_dir=TEMP_PROCESSING_DIR
+        output_dir=TEMP_PROCESSING_DIR,
+        language=language,
+        use_mfa_alignment=SETTINGS.pipeline.use_mfa_alignment,
+        alignment_settings=SETTINGS.alignment,
     )
 
     """ =========== 4. Generate subtitle clips"""
