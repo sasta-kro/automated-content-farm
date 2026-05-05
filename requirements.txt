@@ -10,3 +10,8 @@ requests
 ffmpeg-python
 pythainlp
 textgrid
+transformers
+uroman
+myword
+matplotlib
+git+https://github.com/MahmoudAshraf97/ctc-forced-aligner.git

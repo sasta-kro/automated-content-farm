@@ -1,4 +1,5 @@
 from src.short_form_content_pipeline._CONFIG import AlignmentSettings
+from src.short_form_content_pipeline.burmese_transcript_alignment_mini_pipeline import run_burmese_ctc_alignment_pipeline
 from src.short_form_content_pipeline.mfa_transcript_alignment_mini_pipeline import run_mfa_pipeline
 
 
@@ -43,10 +44,10 @@ def generate_aligned_transcript_data(
         )
 
     if alignment_settings.tokenizer == "burmese":
-        raise NotImplementedError(
-            f"{language} MFA routing is reserved, but Burmese tokenization and MFA model names "
-            "are not configured yet. Add a Burmese tokenizer plus MFA dictionary/acoustic models "
-            "before running full Burmese subtitles."
+        return run_burmese_ctc_alignment_pipeline(
+            raw_script_text_from_json=raw_script_text_from_json,
+            original_speed_audio_file_path=original_speed_audio_file_path,
+            output_dir=output_dir,
         )
 
     raise NotImplementedError(
