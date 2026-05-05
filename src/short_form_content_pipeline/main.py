@@ -14,7 +14,7 @@ from src.short_form_content_pipeline.metadata_injector import inject_spoofed_met
 
 """ ========== 0. Initialize Settings and Configurations =========="""
 from src.short_form_content_pipeline._CONFIG import SETTINGS
-SETTINGS.load_profile("thai_funny_story.yaml")
+SETTINGS.load_profile("burmese_funny_story.yaml")
 
 # --- commonly used variables
 language = SETTINGS.content.language
