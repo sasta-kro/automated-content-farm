@@ -22,12 +22,11 @@ Install dependencies:
 .venv/bin/pip install matplotlib
 
 Run:
-.venv/bin/python src/_project_unrelated_utils/burmese_alignment_smoke_test/align_burmese_smoke_test.py /private/tmp/burmese_alignment_smoke_audio.wav /private/tmp/burmese_alignment_smoke_script.txt /private/tmp/burmese_alignment_smoke_output.json
+.venv/bin/python src/_project_unrelated_utils/burmese_alignment_smoke_test/align_burmese_smoke_test.py /private/tmp/burmese_alignment_smoke_audio.wav /private/tmp/burmese_alignment_smoke_script.txt /private/tmp/burmese_alignment_smoke_output.json syllable
 
 Notes:
-This test intentionally uses syllable-level tokens because word-level myword
-tokenization downloads extra dictionaries and syllable-level captions are good
-enough for the first short-form subtitle experiment.
+Use `syllable` for the original low-level timing test. Use `word` to test
+word-level Burmese display timing directly.
 """
 
 import json
@@ -48,27 +47,43 @@ from ctc_forced_aligner import (
     postprocess_results,
     preprocess_text,
 )
-from burmese_text_tokenization_helpers import tokenize_burmese_script_into_syllables
+from burmese_text_tokenization_helpers import (
+    tokenize_burmese_script_into_syllables,
+    tokenize_burmese_script_into_words,
+)
+
+
+def tokenize_burmese_script_for_alignment(script_text: str, token_mode: str) -> list[str]:
+    if token_mode == "syllable":
+        return tokenize_burmese_script_into_syllables(script_text)
+    if token_mode == "word":
+        return tokenize_burmese_script_into_words(script_text)
+    raise ValueError(f"Unsupported token mode: {token_mode}")
 
 
 def main() -> None:
-    if len(sys.argv) != 4:
+    if len(sys.argv) not in (4, 5):
         raise SystemExit(
-            "Usage: python align_burmese_smoke_test.py audio.wav script.txt output.json"
+            "Usage: python align_burmese_smoke_test.py "
+            "audio.wav script.txt output.json [syllable|word]"
         )
 
     audio_file_path = sys.argv[1]
     script_file_path = Path(sys.argv[2])
     output_json_file_path = Path(sys.argv[3])
+    token_mode = sys.argv[4] if len(sys.argv) == 5 else "syllable"
 
     raw_script_text = script_file_path.read_text(encoding="utf-8")
-    display_tokens = tokenize_burmese_script_into_syllables(raw_script_text)
+    display_tokens = tokenize_burmese_script_for_alignment(
+        script_text=raw_script_text,
+        token_mode=token_mode,
+    )
 
     if not display_tokens:
-        raise ValueError("No Burmese syllable tokens found in the script text.")
+        raise ValueError(f"No Burmese {token_mode} tokens found in the script text.")
 
     spaced_script_text = " ".join(display_tokens)
-    print(f"Tokenized {len(display_tokens)} Burmese syllable tokens.")
+    print(f"Tokenized {len(display_tokens)} Burmese {token_mode} tokens.")
     print("First 40 tokens:", display_tokens[:40])
 
     device = "cpu"
