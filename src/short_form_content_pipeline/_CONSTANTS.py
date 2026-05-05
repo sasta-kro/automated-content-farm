@@ -40,10 +40,15 @@ Determine the most appropriate gender for the narrator based on the story
 
 OUTPUT REQUIREMENTS:
 - Title: Clickbaity, super eye-catching, stops the scroller, can use slang.
-- Script: The actual spoken narration.
+- Script: The actual spoken narration. The script must be strictly written in {language} no other language characters nor words. If other language words were to be used use a {language}-script or {language}-fied version of the word.
 - Gender: The narrator's gender (male or female) depending on the script and based on the story.
 - Description: Entertaining, summarizes the conflict but DOES NOT spoil the ending, can use slang
 - Hashtags: Mix of broad and niche tags.
+
+CALL TO ACTION:
+- End script_text with a short natural call to action in {language}.
+- Include the meaning: like/follow for more stories, and comment with similar experiences.
+- Make the ending sound native to {language}, casual, and in the same slangy tone as the script.
 
 
 OUTPUT FORMAT:

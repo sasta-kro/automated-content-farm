@@ -56,17 +56,11 @@ async def generate_script_data_json(
     client = genai.Client(api_key=gemini_api_key)
 
     # Construct prompts using Constants + Config injection
-
-
-    # System Instruction: The "Persona"
-    # We tell Gemini it is a famous Thai TikTok/Reel storyteller.
     system_instruction = SCRIPT_GEN_SYSTEM_INSTRUCTION.format(
         language=language,
         time_length=time_length,
     )
 
-
-    # User Prompt
     prompt = SCRIPT_GEN_USER_PROMPT.format(
         topic=topic,
         language=language
@@ -100,9 +94,6 @@ async def generate_script_data_json(
         raw_json = response.text
         script_data = json.loads(raw_json)
 
-        # updating the json to append outro
-        script_data['script_text'] = _append_outro_phrase(script_data['script_text'])
-
         print(textwrap.dedent(f"""
         Title: {script_data.get('title_text')}
         Full Script ('script_text'): {script_data.get('script_text')}
@@ -123,12 +114,6 @@ async def generate_script_data_json(
     except Exception as e:
         print(f"❌ Error generating script: {e}")
         raise e
-
-
-def _append_outro_phrase(original_text: str):
-    text_to_append = "ชอบใจฝากกดไลก์กดติดตามไว้เลยนะมึง! แล้วใครเคยเจอแบบนี้บ้างวะ เมนต์มาบอกหน่อย!"
-    return original_text + text_to_append
-
 
 
 # for translation
