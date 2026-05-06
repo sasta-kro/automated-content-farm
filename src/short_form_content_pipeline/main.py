@@ -64,7 +64,7 @@ def main():
         )
     )
 
-    # PATCH work to use when the thai script is pre generated (to save generation token)
+    ## PATCH work to use when the thai script is pre generated (to save generation token)
     # original_script_content_data_json = json.load(open("src/short_form_content_pipeline/___0w0__temp_automation_workspace/original_script_data.json"))
 
     # translating to English so that I can understand and for description

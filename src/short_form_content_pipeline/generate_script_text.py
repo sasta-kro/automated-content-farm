@@ -18,9 +18,6 @@ from src.short_form_content_pipeline._CONSTANTS import (
 )
 
 async def generate_script_data_json(
-        # default arguments are removed to reduce Order of Operation complications.
-        # now arguments MUST be passed
-
         language: str,
         topic: str,
         time_length: str,
@@ -31,7 +28,7 @@ async def generate_script_data_json(
 ):
     """
     Generates a viral-style Thai short-form script using Gemini.
-    WARNING: `time_length` is not very accurate, it returns something longer like about 1.3 to 1.4 times
+    WARNING: `time_length` is not very accurate, it returns something longer like about 1.4x to 2x times
     Uses settings from src.config.SETTINGS (loaded from YAML).
 
     Returns: JSON with title_text, script_text, gender, description_text, hashtags
@@ -41,17 +38,17 @@ async def generate_script_data_json(
     # (inside the function so that it gets the `language` argument
     class ScriptOutputData(BaseModel):
         title_text: str = Field(description=f"A catchy, clickbait title in {language} to hook the viewer")
-        script_text: str = Field(description=f"The unhinged short story script in {language}, slang allowed")
+        script_text: str = Field(description=f"The short story script in {language}, slang allowed")
         gender: str = Field(description="The gender of the narrator: 'M' or 'F'")
         description_text: str = Field(description=f"Entertaining description in {language} but spoiler-free")
         hashtags: str = Field(description=f"Relevant viral hashtags in {language}")
 
 
-    print(f"1. 🇹🇭 Asking {gemini_model_id} to cook up the story script in {language}...\n Given topic:{topic}")
+    print(f"1. 🇹🇭 Asking {gemini_model_id} to cook up the story script in {language}...\n Given topic: [{topic}]")
 
     # Initialize Client with Global Settings (stored in config)
     if not gemini_api_key:
-        raise ValueError("❌ Error: GEMINI_API_KEY is missing in Settings!")
+        raise ValueError("❌ Error: GEMINI_API_KEY is missing in Settings")
 
     client = genai.Client(api_key=gemini_api_key)
 
